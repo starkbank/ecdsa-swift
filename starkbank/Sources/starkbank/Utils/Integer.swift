@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Integer.swift
 //  
 //
 //  Created by Rafael Stark on 2/17/21.

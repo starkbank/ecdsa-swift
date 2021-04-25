@@ -1,5 +1,5 @@
 //
-//  File 2.swift
+//  Binary.swift
 //  
 //
 //  Created by Rafael Stark on 2/17/21.
@@ -26,4 +26,9 @@ class BinaryAscii {
     static func numberFromString(_ data: NSData) -> BigInt {
         return BigInt(self.hexFromBinary(data), radix: 16)!
     }
+    
+    static func binaryFromHex(hex: String) -> NSData {
+        return NSData(base64Encoded: hex, options: .ignoreUnknownCharacters)!
+    }
+    
 }

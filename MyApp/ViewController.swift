@@ -19,12 +19,10 @@ class ViewController: UIViewController {
         let message = "Rafael"
         let privateKey = PrivateKey(secret: BigInt(2))
         let publicKey = privateKey.publicKey()
-        
-//        let baseEncoded = Base64.encode(string: String(privateKey.secret))
-//        let baseDecoded: String = Base64.decode(string: baseEncoded)
+        print(privateKey.secret)
+//        print(publicKey.toPem())
+//        print(publicKey.toDer())
         let signature = Ecdsa.sign(message: message, privateKey: privateKey)
-//        let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)b
-//        print(isValid)
         self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)"
     }
 }
