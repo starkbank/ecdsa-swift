@@ -20,8 +20,9 @@ class ViewController: UIViewController {
         let privateKey = PrivateKey(secret: BigInt(2))
         let publicKey = privateKey.publicKey()
         print(privateKey.secret)
-//        print(publicKey.toPem())
-//        print(publicKey.toDer())
+        
+        print(publicKey.toPem())
+        print("DER: \(publicKey.toDer())")
         let signature = Ecdsa.sign(message: message, privateKey: privateKey)
         self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)"
     }

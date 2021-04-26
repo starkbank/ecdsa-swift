@@ -26,9 +26,17 @@ class BinaryAscii {
     static func numberFromString(_ data: NSData) -> BigInt {
         return BigInt(self.hexFromBinary(data), radix: 16)!
     }
-    
-    static func binaryFromHex(hex: String) -> NSData {
-        return NSData(base64Encoded: hex, options: .ignoreUnknownCharacters)!
+
+    static func binaryFromHex(hex: String) -> String {
+        return String(BigInt(hex, radix: 16)!, radix: 2)
     }
     
+    static func stringFromNumber(number: BigInt, length: BigInt) -> String {
+        var result = String(number, radix: 16)
+
+        while (result.count < 2 * length) {
+            result = "0" + result;
+        }
+        return binaryFromHex(hex: result)
+    }
 }

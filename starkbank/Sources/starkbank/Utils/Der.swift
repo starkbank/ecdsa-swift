@@ -6,17 +6,9 @@
 //
 
 import Foundation
+import BigInt
 
 class Der {
-    
-//    0x30 byte: header byte to indicate compound structure
-//    one byte to encode the length of the following data
-//    0x02: header byte indicating an integer
-//    one byte to encode the length of the following r value
-//    the r value as a big-endian integer
-//    0x02: header byte indicating an integer
-//    one byte to encode the length of the following s value
-//    the s value as a big-endian integer
 
     static let hexAt = "\\x00"
     static let hexB = "\\x02"
@@ -38,10 +30,11 @@ class Der {
     private let bytesHexF = Base64.encode(string: hexF)
     
     
-    func encodedSequence(encodedPieces: [NSData]) -> NSMutableData {
+    func encodedSequence(encodedPieces: [NSData]) -> NSData {
         var sequence: [NSData] = []
         var totalLengthLen = 0;
-        for i in stride(from: 0, through: encodedPieces.count, by: 1) {
+        for i in stride(from: 0, to: encodedPieces.count, by: 1) {
+            print(i)
             sequence.append(encodedPieces[i])
             totalLengthLen += encodedPieces[i].count
         }
@@ -52,10 +45,10 @@ class Der {
         for item in sequence {
             joinedData.append(item as Data)
         }
-        return joinedData
+        return joinedData.copy() as! NSData
     }
     
-    func encodeInteger(x: Int) {
+    func encodeInteger(x: BigInt) {
         if(x < 0) {
             return print("x cannot be negative")
         }
@@ -66,32 +59,46 @@ class Der {
             t = "0" + t
         }
         
-        var binary = BinaryAscii.binaryFromHex(hex: t)
+        var x = BinaryAscii.binaryFromHex(hex: t)
+        
     }
    
-    func encodeOid(pieces: [Int]) {
+    func encodeOid(pieces: [Int]) throws -> NSData {
         var array = pieces
         let first = array.removeFirst()
         let second = array.removeFirst()
         if(first > 2) {
-            return print("first has to be <= 2")
+            throw Error.moreOrEqualTwo
         }
 
         if(second > 39) {
-            return print("second has to be <= 39")
+            throw Error.moreOrEqualTwo
         }
         
-//        let encodedPieces = []
+        let encodedPieces = NSMutableData()
+        pieces.forEach { (d) in
+            encodedPieces.append(encodeNumber(number: d) as Data)
+        }
         
+        let body =  NSMutableData()
+        body.append(String(UnicodeScalar(UInt8(40 * first + second))).data as Data)
+        body.append(encodedPieces as Data)
+        
+        let result = NSMutableData()
+        result.append(Der.hexF.data as Data)
+        result.append(try encodeLength(length: body.length).data as Data)
+        result.append(body as Data)
+        return result
     }
         
     func toPem(der: Data, name: String) -> String {
-        let b64 = Base64.encode(data: der)
+        var b64 = Base64.encode(data: der)
         var lines = [("-----BEGIN " + name + "-----\n")]
-        for start in stride(from: 0, through: b64.count, by: 1) {
-            let range = NSRange(location: start, length: start + 64)
-            lines.append(b64[range] + "\n")
+        while(b64.count > 64) {
+            lines.append(b64[0..<64] + "\n")
+            b64 = b64.replacingOccurrences(of: b64[0..<64], with: "")
         }
+        lines.append(b64 + "\n")
         lines.append("-----END " + name + "-----\n");
         return lines.joined()
     }
@@ -99,7 +106,7 @@ class Der {
     func fromPem(pem: String) -> String {
         let split = pem.split(separator: "\n")
         var stripped = ""
-        for i in stride(from: 0, through: split.count, by: 1) {
+        for i in stride(from: 0, to: split.count, by: 1) {
             if(!split[i].starts(with: "-----")) {
                 stripped += split[i].trimmingCharacters(in: .whitespacesAndNewlines)
             }
@@ -107,11 +114,11 @@ class Der {
         return Base64.decode(string: stripped)
     }
     
-    private func encodeNumber(number: Int) -> Any {
+    private func encodeNumber(number: Int) -> NSData {
         var n = number
         var b128Digits: [Int] = []
         while n > 0 {
-            b128Digits.insert(0, at: (n & hex127) | hex160)
+            b128Digits.append((n & hex127) | hex160)
             n >>= 7
         }
         
@@ -120,12 +127,12 @@ class Der {
         }
         
         b128Digits[b128Digits.count - 1] &= hex127;
-        var encodedDigits: [Any] = [];
+        let encodedDigits = NSMutableData()
         b128Digits.forEach { (d) in
-            encodedDigits.append(String(UnicodeScalar(UInt8(d))))
+            encodedDigits.append(String(UnicodeScalar(UInt8(d))).data as Data)
         }
         
-        return encodedDigits
+        return encodedDigits.copy() as! NSData
     }
     
     private func encodeLength(length: Int) throws -> String {
@@ -156,11 +163,21 @@ class Der {
         }
     }
     
+    func encodeBitstring(t: String) -> NSData {
+        let combinedData = NSMutableData()
+        combinedData.append(Der.hexC.data as Data)
+        combinedData.append(try! encodeLength(length: t.count).data as Data)
+        combinedData.append(t.data as Data)
+        return combinedData
+    }
 }
 
 enum Error: Swift.Error {
     case negative
     case algorithmsFailed
+    case parserError
+    case moreOrEqualTwo
+    case moreOrEqual39
 }
 
 extension String {
@@ -172,4 +189,5 @@ extension String {
             return NSData()
         }
     }
+    
 }
