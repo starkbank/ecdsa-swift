@@ -17,12 +17,13 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let message = "Rafael"
-        let privateKey = PrivateKey(secret: BigInt(2))
-        let publicKey = privateKey.publicKey()
-        print(privateKey.secret)
+//        let privateKey = PrivateKey(secret: BigInt(2))
         
-        print(publicKey.toPem())
-        print("DER: \(publicKey.toDer())")
+        let privateKey = PrivateKey( )
+        let publicKey = privateKey.publicKey()
+        
+        print("PEM: \(publicKey.toPem())")
+//        print("DER: \(publicKey.toDer())")
         let signature = Ecdsa.sign(message: message, privateKey: privateKey)
         self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)"
     }

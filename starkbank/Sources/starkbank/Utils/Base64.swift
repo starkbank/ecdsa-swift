@@ -14,8 +14,8 @@ public class Base64 {
         return data.base64EncodedString()
     }
     
-    public static func encode(string: String) -> String {
-        return self.encode(data: Data(string.utf8))
+    public static func encode(string: String) -> Data {
+        return self.encode(data: Data(string.utf8)).data as Data
     }
     
     public static func decode(string: String) -> Data {

@@ -33,8 +33,14 @@ public class PublicKey {
     
     public func toDer() -> Data {
         do {
-            let encodeEcAndOid = try Der().encodedSequence(encodedPieces: [Der().encodeOid(pieces: [1, 2, 840, 10045, 2, 1]), Der().encodeOid(pieces: curve.oid)])
-            return Der().encodedSequence(encodedPieces: [encodeEcAndOid, Der().encodeBitstring(t: self.toString(encoded: true))]) as Data
+            let a = Der()
+            let encodeEcAndOid = try a.encodedSequence(encodedPieces:
+                                                        [a.encodeOid(pieces: [1, 2, 840, 10045, 2, 1]),
+                                                         a.encodeOid(pieces: curve.oid)])
+//            let encodeEcAndOid = try Der().encodedSequence(encodedPieces: [Der().encodeOid(pieces: [1, 2, 840, 10045, 2, 1])])
+
+//            return Der().encodedSequence(encodedPieces: [encodeEcAndOid, Der().encodeBitstring(t: self.toString(encoded: true))]) as Data
+            return a.encodedSequence(encodedPieces: [encodeEcAndOid]) as Data
         } catch {
             print(error)
         }
