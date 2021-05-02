@@ -23,9 +23,9 @@ class ViewController: UIViewController {
 //        let baseEncoded = Base64.encode(string: String(privateKey.secret))
 //        let baseDecoded: String = Base64.decode(string: baseEncoded)
         let signature = Ecdsa.sign(message: message, privateKey: privateKey)
-//        let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)b
-//        print(isValid)
-        self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)"
+        let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)
+
+        self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)\n\n v:\(isValid)"
     }
 }
 

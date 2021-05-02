@@ -17,8 +17,8 @@ public class Ecdsa {
         let curve = privateKey.curve
         let randNum = RandomInteger.between(BigInt(1), curve.N)
         let randomSignPoint = Math.multiply(curve.G, randNum, curve.N, curve.A, curve.P)
-        let r = randomSignPoint.x % curve.N
-        let s = ((numberMessage + r * privateKey.secret) * (Math.inv(randNum, curve.N))) % curve.N
+        let r = randomSignPoint.x.modulus(curve.N)
+        let s = ((numberMessage + r * privateKey.secret) * (Math.inv(randNum, curve.N))).modulus(curve.N)
         return Signature(r, s)
     }
     
@@ -28,13 +28,11 @@ public class Ecdsa {
         let curve = publicKey.curve
         let r = signature.r
         let s = signature.s
-        if (r < BigInt(1) || r > curve.N - BigInt(1)) { return false }
-        if (s < BigInt(1) || s > curve.N - BigInt(1)) { return false }
         let inv = Math.inv(s, curve.N)
-        let u1 = Math.multiply(curve.G, (numberMessage * inv) % curve.N, curve.A, curve.P, curve.N)
-        let u2 = Math.multiply(publicKey.point, (r * inv) % curve.N, curve.A, curve.P, curve.N)
-        let add = Math.add(u1, u2, curve.P, curve.A)
-        let modX = add.x % curve.N
+        let u1 = Math.multiply(curve.G, (numberMessage * inv).modulus(curve.N), curve.N, curve.A, curve.P)
+        let u2 = Math.multiply(publicKey.point, (r * inv).modulus(curve.N), curve.N, curve.A, curve.P)
+        let add = Math.add(u1, u2, curve.A, curve.P)
+        let modX = add.x.modulus(curve.N)
         return r == modX
     }
 }
