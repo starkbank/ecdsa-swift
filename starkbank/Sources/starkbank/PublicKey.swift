@@ -17,4 +17,33 @@ public class PublicKey {
         self.point = point
         self.curve = curve
     }
+    
+    public func toString(encoded: Bool = false) ->  String{
+        let xString = BinaryAscii.stringFromNumber(number: self.point.x, length: self.curve.length())
+        let yString = BinaryAscii.stringFromNumber(number: self.point.y, length: self.curve.length())
+        if (encoded) {
+            return "\\x00\\x04" + xString + yString;
+        }
+        return xString + yString
+    }
+    
+    public func toDer() -> Data {
+        return Data()
+    }
+    
+    public func toPem() -> String {
+        return Der().toPem(der: self.toDer(), name: "PUBLIC KEY")
+    }
+    
+    static func fromPem(pem: String) {
+        
+    }
+    
+    static func fromDer(der: Data) {
+        
+    }
+    
+    static func fromString(string: String) {
+        
+    }
 }

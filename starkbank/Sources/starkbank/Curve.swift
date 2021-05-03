@@ -37,6 +37,10 @@ public class CurveFp {
     func contains(p: Point) -> Bool {
         return (p.y.power(2) - (p.x.power(3) + self.A * p.x + self.B)) % self.P == 0
     }
+    
+    func length() -> BigInt {
+        return BigInt((1 + String(N, radix: 16).count) / 2)
+    }
 }
 
 public let secp256k1 = CurveFp(

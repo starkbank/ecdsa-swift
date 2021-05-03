@@ -23,4 +23,28 @@ public class PrivateKey {
         let publicPoint = Math.multiply(curve.G, secret, curve.N, curve.A, curve.P)
         return PublicKey(point: publicPoint, curve: curve)
     }
+    
+    public func toString(encoded: Bool) ->  String{
+        return BinaryAscii.stringFromNumber(number: self.secret, length: self.curve.length());
+    }
+    
+    public func toPem() -> String {
+        return Der().toPem(der: self.toDer(), name: "EC PRIVATE KEY")
+    }
+    
+    public func toDer() -> Data {
+        return Data()
+    }
+    
+    static func fromPem(pem: String) {
+        
+    }
+    
+    static func fromDer(der: Data) {
+        
+    }
+    
+    static func fromString(string: String) {
+        
+    }
 }
