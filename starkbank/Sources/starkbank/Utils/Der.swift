@@ -32,22 +32,24 @@ let hex224 = 0xe0
 class Der {
     
     //METODO VALIDADO EM OUTRO SDK
-    func encodedSequence(encodedPieces: [NSData]) -> NSData {
-        var sequence: [NSData] = []
+    func encodedSequence(encodedPieces: [Data]) -> Data {
+        var sequence = Data()
         var totalLengthLen = 0;
         for i in stride(from: 0, to: encodedPieces.count, by: 1) {
             sequence.append(encodedPieces[i])
+            
             totalLengthLen += encodedPieces[i].count
         }
-        let joinedData = NSMutableData()
+        var joinedData = Data()
         joinedData.append(Data([UInt8(hex0)]))
-        joinedData.append(_encodeLength(totalLengthLen).data as Data)
-        let combinedData = NSMutableData()
+        
+        joinedData.append(_encodeLength(totalLengthLen))
+        var combinedData = Data()
         for item in sequence {
-            combinedData.append(item as Data)
+            combinedData.append(item)
         }
-        joinedData.append(combinedData.copy() as! Data)
-        return joinedData.copy() as! NSData
+        joinedData.append(combinedData)
+        return joinedData
     }
     
     func encodeInteger(x: BigInt) {
@@ -65,7 +67,7 @@ class Der {
         
     }
    
-    func encodeOid(pieces: [Int]) throws -> NSData {
+    func encodeOid(pieces: [Int]) throws -> Data {
         var array = pieces
         let first = array.removeFirst()
         let second = array.removeFirst()
@@ -78,22 +80,23 @@ class Der {
 //        }
 //
 //
-        let body =  NSMutableData()
-        body.append(String(UnicodeScalar(UInt8(40 * first + second))).data as Data)
+
+        var body =  Data()
+        body.append(String(UnicodeScalar(UInt8(40 * first + second))).data(using: .isoLatin1)!)
         array.forEach { (d) in
-            body.append(encodeNumber(number: d) as Data)
+            body.append(encodeNumber(number: d))
         }
                 
-        let result = NSMutableData()
+        var result = Data()
         result.append(Data([UInt8(hexF)]))
-        result.append(_encodeLength(body.length).data as Data)
-        result.append(body.copy() as! Data)
+        result.append(_encodeLength(body.count))
+        result.append(body)
         
-        return result.copy() as! NSData
+        return result
     }
         
     func toPem(der: Data, name: String) -> String {
-        let b64 = Base64.encode(data: der)
+        let b64 = der.base64EncodedString()
         var lines = [("-----BEGIN " + name + "-----\n")]
         for start in stride(from: 0, to: b64.count, by: 64) {
             lines.append(b64[start..<start+64] + "\n")
@@ -113,7 +116,8 @@ class Der {
         return Base64.decode(string: stripped)
     }
     
-    private func encodeNumber(number: Int) -> NSData {
+    //METODO VALIDADO EM OUTRO SDK
+    private func encodeNumber(number: Int) -> Data {
         var n = number
         var b128Digits: [Int] = []
         while n > 0 {
@@ -127,21 +131,21 @@ class Der {
         
         b128Digits[b128Digits.count - 1] &= hex127;
         
-        let encodedDigits = NSMutableData()
+        var encodedDigits = Data()
         b128Digits.forEach { (d) in
-            encodedDigits.append(String(UnicodeScalar(UInt8(d))).data)
+            encodedDigits.append(String(UnicodeScalar(UInt8(d))).data(using: .isoLatin1)!)
         }
-        return encodedDigits.copy() as! NSData
+        return encodedDigits
     }
     
     
-    private func _encodeLength(_ length: Int) -> String {
+    private func _encodeLength(_ length: Int) -> Data {
         assert(length >= 0)
 
         if (length < hex160) {
-            return String(UnicodeScalar(UInt8(length)))
+            return String(UnicodeScalar(UInt8(length))).data(using: .isoLatin1)!
         }
-
+        
         var hexString = String(length, radix: 16)
         if hexString.count % 2 == 1 {
             hexString = "0" + hexString
@@ -149,8 +153,7 @@ class Der {
 
         let s = BinaryAscii.binaryFromHex(hexString)
         let lengthLen = s.count
-
-        return String(UnicodeScalar(UInt8(hex160 | lengthLen))) + String(lengthLen)
+        return (String(UnicodeScalar(UInt8(hex160 | lengthLen))) + String(lengthLen)).data(using: .isoLatin1)!
     }
     
     private func checkSequenceError(string: String, start: String, expected: String) throws {
@@ -159,10 +162,13 @@ class Der {
         }
     }
     
-    func encodeBitstring(t: String) -> NSData {
-        let combinedData = NSMutableData()
-        combinedData.append( Data([UInt8(hexC)]))
-        combinedData.append(_encodeLength(t.count).data as Data)
+    func encodeBitstring(t: String) -> Data {
+        var combinedData = Data()
+        var a =  String(t).data(using: .utf8)!
+        combinedData.append(Data([UInt8(hexC)]))
+        print(a.count)
+        print(a)
+        combinedData.append(_encodeLength(t.count))
         combinedData.append(t.data as Data)
         return combinedData
     }

@@ -17,13 +17,14 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let message = "Rafael"
-        let privateKey = PrivateKey(secret: BigInt(2))
+        let privateKey = PrivateKey()
         let publicKey = privateKey.publicKey()
         
 //        let baseEncoded = Base64.encode(string: String(privateKey.secret))
 //        let baseDecoded: String = Base64.decode(string: baseEncoded)
         let signature = Ecdsa.sign(message: message, privateKey: privateKey)
         let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)
+        print(publicKey.toPem())
 
         self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)\n\n v:\(isValid)"
     }

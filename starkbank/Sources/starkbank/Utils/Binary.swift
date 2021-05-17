@@ -33,10 +33,11 @@ class BinaryAscii {
     
     static func stringFromNumber(number: BigInt, length: BigInt) -> String {
         var result = String(number, radix: 16)
-
         while (result.count < 2 * length) {
             result = "0" + result;
         }
+        print("RESULT: ", result)
+
         return binaryFromHex(result)
     }
 }
