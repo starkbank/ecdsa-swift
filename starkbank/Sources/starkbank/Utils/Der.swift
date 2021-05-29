@@ -162,14 +162,12 @@ class Der {
         }
     }
     
-    func encodeBitstring(t: String) -> Data {
+    func encodeBitstring(t: Data) -> Data {
+        print(t.count)
         var combinedData = Data()
-        var a =  String(t).data(using: .utf8)!
         combinedData.append(Data([UInt8(hexC)]))
-        print(a.count)
-        print(a)
         combinedData.append(_encodeLength(t.count))
-        combinedData.append(t.data as Data)
+        combinedData.append(t)
         return combinedData
     }
 }
@@ -186,16 +184,4 @@ extension String {
     var data: Data {
         return Data(self.utf8)
     }
-}
-
-
-extension Data {
-    func hexEncodedString() -> String {
-        return map { String(format: "%02hhx", $0) }.joined()
-    }
-}
-
-
-extension StringProtocol {
-    var asciiValues: [UInt8] { compactMap(\.asciiValue) }
 }

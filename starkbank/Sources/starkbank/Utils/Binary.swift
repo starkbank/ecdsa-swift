@@ -24,6 +24,7 @@ class BinaryAscii {
     }
     
     static func binaryFromHex(_ hex: String) -> String {
+        print(String(BigInt(hex, radix: 16)!, radix: 2))
         return String(BigInt(hex, radix: 16)!, radix: 2)
     }
     
@@ -40,4 +41,6 @@ class BinaryAscii {
 
         return binaryFromHex(result)
     }
+
 }
+

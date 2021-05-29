@@ -24,7 +24,7 @@ public class PrivateKey {
         return PublicKey(point: publicPoint, curve: curve)
     }
     
-    public func toString(encoded: Bool) ->  String{
+    public func toString(encoded: Bool) ->  String {
         return BinaryAscii.stringFromNumber(number: self.secret, length: self.curve.length());
     }
     

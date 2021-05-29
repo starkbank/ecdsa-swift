@@ -18,22 +18,31 @@ public class PublicKey {
         self.curve = curve
     }
     
-    public func toString(encoded: Bool = false) ->  String {
+    public func toString(encoded: Bool = false) ->  Data {
+        var data = Data()
         let xString = BinaryAscii.stringFromNumber(number: self.point.x, length: self.curve.length())
-        print(xString)
         let yString = BinaryAscii.stringFromNumber(number: self.point.y, length: self.curve.length())
-        if (encoded) {
-            return "\\x00\\x04" + xString + yString;
+        
+        print(xString)
+        var byteArray = [UInt8]()
+        for char in xString.utf8{
+            byteArray += [char]
         }
-        return xString + yString
-    }
+
+        return data
+//            return withUnsafeBytes(of: "\\x00\\x04") { Data($0) } + xString + yString;
+        }
+//        return xString + yString
     
     public func toDer() -> Data {
         do {
             let a = Der()
             let encodeEcAndOid = try a.encodedSequence(encodedPieces:
                                                         [a.encodeOid(pieces: [1, 2, 840, 10045, 2, 1])])
-            return a.encodedSequence(encodedPieces: [encodeEcAndOid, a.encodeBitstring(t: self.toString(encoded: true))])
+            self.toString(encoded: true)
+
+            return a.encodedSequence(encodedPieces: [encodeEcAndOid])
+//            return a.encodedSequence(encodedPieces: [encodeEcAndOid, a.encodeBitstring(t: self.toString(encoded: true))])
         }
         catch {
             print(error)
@@ -57,17 +66,5 @@ public class PublicKey {
     static func fromString(string: String) {
         
     }
-}
-
-
-extension Data {
-    struct HexEncodingOptions: OptionSet {
-        let rawValue: Int
-        static let upperCase = HexEncodingOptions(rawValue: 1 << 0)
-    }
-
-    func hexEncodedString(options: HexEncodingOptions = []) -> String {
-        let format = options.contains(.upperCase) ? "%02hhX" : "%02hhx"
-        return self.map { String(format: format, $0) }.joined()
-    }
+    
 }
