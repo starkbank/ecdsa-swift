@@ -37,22 +37,22 @@ public class PublicKey {
             ),
             Der.encodePrimitive(tagType: bitString, value: toString(encoded: true) as AnyObject)
         )
-        return BinaryAscii.binaryFromHex(hexadecimal)
+        return BinaryAscii.dataFromHex(hexadecimal)
     }
     
     public func toPem() -> String {
         let der = toDer()
-        return createPem(content: BinaryAscii.base64FromString(der).data, template: publicKeyPemTemplate)
+        return createPem(content: BinaryAscii.base64FromData(der), template: publicKeyPemTemplate)
     }
     
     public static func fromPem(_ pem: String) throws -> PublicKey {
         let publicKeyPem = getPemContent(pem: pem)
-        return try fromDer(BinaryAscii.stringFromBase64(publicKeyPem))
+        return try fromDer(BinaryAscii.dataFromBase64(publicKeyPem))
 
     }
     
     public static func fromDer(_ data: Data) throws -> PublicKey{
-        var hexadecimal = BinaryAscii.hexFromString(data)
+        var hexadecimal = BinaryAscii.hexFromData(data)
         
         let parsed = try Der.parse(hexadecimal: &hexadecimal)[0] as! [Any]
         let publicKeyOid = (parsed[0] as! [Any])[0] as! [Int]
@@ -60,7 +60,8 @@ public class PublicKey {
         var pointString = parsed[1] as! String
         
         if (publicKeyOid != [1, 2, 840, 10045, 2, 1]) {
-            throw Error.matchError("The Public Key Object Identifier (OID) should be [1, 2, 840, 10045, 2, 1], but {actualOid} was found instead".replacingOccurrences(of: "{actualOid}", with: publicKeyOid.description))
+            throw Error.matchError("The Public Key Object Identifier (OID) should be [1, 2, 840, 10045, 2, 1], but {actualOid} was found instead"
+                                    .replacingOccurrences(of: "{actualOid}", with: publicKeyOid.description))
         }
         let curve = try getCurveByOid(curveOid)
         return try fromString(string: &pointString, curve: curve)
@@ -81,12 +82,9 @@ public class PublicKey {
                                     .replacingOccurrences(of: "{x}", with: String(point.x))
                                     .replacingOccurrences(of:"{y}", with: String(point.y))
                                     .replacingOccurrences(of:"{name}", with: curve.name))
-            
         }
-        
         return PublicKey(point: point, curve: curve)
     }
-    
 }
 
 let publicKeyPemTemplate = """

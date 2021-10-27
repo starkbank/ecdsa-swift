@@ -12,14 +12,13 @@ func getPemContent(pem: String) -> String {
     return pem.replacingOccurrences(of: regex, with: "", options: [.regularExpression]).split(whereSeparator: \.isNewline).joined(separator: "")
 }
 
-func createPem(content: Data, template: String) -> String {
-    var lines = Array<Data>()
+func createPem(content: String, template: String) -> String {
+    var lines = Array<String>()
     for start in stride(from: 0, to: content.count, by: 64) {
         let begin = content.index(content.startIndex, offsetBy: start)
         let limit = Int(start.description)! + 64
         let end = content.index(content.startIndex, offsetBy: limit <= content.count ? limit : content.count)
-        lines.append(content[begin..<end])
+        lines.append(String(content[begin..<end]))
     }
-    let stringLines = lines.map { String(data: $0, encoding: .utf8)! }
-    return template.replacingOccurrences(of: "{content}", with: stringLines.joined(separator: "\n"))
+    return template.replacingOccurrences(of: "{content}", with: lines.joined(separator: "\n"))
 }

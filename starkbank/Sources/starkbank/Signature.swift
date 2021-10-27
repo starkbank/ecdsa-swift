@@ -21,21 +21,21 @@ public class Signature {
     
     public func toDer() -> Data {
         let hexadecimal = self.toString()
-        let encodedSequence = BinaryAscii.binaryFromHex(hexadecimal)
+        let encodedSequence = BinaryAscii.dataFromHex(hexadecimal)
         return encodedSequence
     }
     
     public static func fromDer(_ data: Data) throws -> Signature {
-        var hexadecimal = BinaryAscii.hexFromString(data)
+        var hexadecimal = BinaryAscii.hexFromData(data)
         return try fromString(string: &hexadecimal)
     }
     
     public func toBase64() -> String {
-        return BinaryAscii.base64FromString(self.toDer())
+        return BinaryAscii.base64FromData(self.toDer())
     }
     
     public static func fromBase64(_ string: String) throws -> Signature {
-        let der = BinaryAscii.stringFromBase64(string)
+        let der = BinaryAscii.dataFromBase64(string)
         return try fromDer(der)
     }
     

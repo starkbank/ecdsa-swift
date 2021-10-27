@@ -28,20 +28,20 @@ class BinaryAscii {
         return binary.zfill(hex.count * 4)
     }
     
-    static func stringFromBase64(_ base64: String) -> Data {
+    static func dataFromBase64(_ base64: String) -> Data {
         return Data(base64Encoded: base64)!
     }
     
-    static func base64FromString(_ string: Data) -> String {
+    static func base64FromData(_ string: Data) -> String {
         return string.base64EncodedString()
     }
     
-    static func hexFromString(_ string: Data) -> String {
+    static func hexFromData(_ string: Data) -> String {
         let data = Data(string)
         return data.map{ String(format:"%02x", $0) }.joined()
     }
     
-    static func binaryFromHex(_ hex: String) -> Data {
+    static func dataFromHex(_ hex: String) -> Data {
         var data = Data(capacity: hex.count / 2)
         
         let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)

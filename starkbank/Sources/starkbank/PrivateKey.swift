@@ -43,22 +43,22 @@ public class PrivateKey {
             Der.encodePrimitive(tagType: publicKeyPointContainer, value: Der.encodePrimitive(tagType: bitString, value: publicKeyString as AnyObject) as AnyObject)
         )
                 
-        return BinaryAscii.binaryFromHex(hexadecimal)
+        return BinaryAscii.dataFromHex(hexadecimal)
     }
     
     public func toPem() -> String {
         let der = self.toDer()
-        let base64 = BinaryAscii.base64FromString(der)
-        return createPem(content: base64.data, template: pemTemplate)
+        let base64 = BinaryAscii.base64FromData(der)
+        return createPem(content: base64, template: pemTemplate)
     }
     
     public static func fromPem(_ string: String) throws -> PrivateKey {
         let privateKeyPem = getPemContent(pem: string)
-        return try fromDer(BinaryAscii.stringFromBase64(privateKeyPem))
+        return try fromDer(BinaryAscii.dataFromBase64(privateKeyPem))
     }
     
     public static func fromDer(_ data: Data) throws -> PrivateKey {
-        var hexadecimal = BinaryAscii.hexFromString(data)
+        var hexadecimal = BinaryAscii.hexFromData(data)
 
         let parsed = try Der.parse(hexadecimal: &hexadecimal)[0] as! [Any]
         let privateKeyFlag = parsed[0] as! BigInt

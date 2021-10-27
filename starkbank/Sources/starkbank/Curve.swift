@@ -38,8 +38,8 @@ public class CurveFp {
         return (p.y.power(2) - (p.x.power(3) + self.A * p.x + self.B)) % self.P == 0
     }
     
-    func length() -> BigInt {
-        return BigInt((1 + String(N, radix: 16).count) / 2)
+    func length() -> Int {
+        return (1 + String(N, radix: 16).count) / 2
     }
 }
 
@@ -66,7 +66,9 @@ let curvesByOid = supportedCurves.reduce([Array<Int>: CurveFp]()) { (dict, curve
 
 public func getCurveByOid(_ oid: Array<Int>) throws -> CurveFp {
     if (curvesByOid[oid] == nil) {
-        throw Error.invalidOidError("Unknown curve with oid {receivedOid}; The following are registered: {registeredOids}".replacingOccurrences(of: "{receivedOid}", with: oid.description).replacingOccurrences(of: "{registeredOids}", with: supportedCurves.description))
+        throw Error.invalidOidError("Unknown curve with oid {receivedOid}; The following are registered: {registeredOids}"
+                                        .replacingOccurrences(of: "{receivedOid}", with: oid.description)
+                                        .replacingOccurrences(of: "{registeredOids}", with: supportedCurves.description))
     }
     return curvesByOid[oid]!
 }
