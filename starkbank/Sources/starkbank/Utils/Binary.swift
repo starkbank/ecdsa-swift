@@ -50,8 +50,6 @@ class BinaryAscii {
             let num = UInt8(byteString, radix: 16)!
             data.append(num)
         }
-        guard data.count > 0 else { return Data() }
         return data
-
     }
 }

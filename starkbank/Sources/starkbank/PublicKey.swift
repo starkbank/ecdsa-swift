@@ -32,10 +32,10 @@ public class PublicKey {
     public func toDer() -> Data {
         let hexadecimal = Der.encodeConstructed(
             Der.encodeConstructed(
-                Der.encodePrimitive(tagType: object, value: [1, 2, 840, 10045, 2, 1] as AnyObject),
-                Der.encodePrimitive(tagType: object, value: curve.oid as AnyObject)
+                Der.encodeObject([1, 2, 840, 10045, 2, 1]),
+                Der.encodeObject(curve.oid)
             ),
-            Der.encodePrimitive(tagType: bitString, value: toString(encoded: true) as AnyObject)
+            Der.encodeBitString(toString(encoded: true))
         )
         return BinaryAscii.dataFromHex(hexadecimal)
     }

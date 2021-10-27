@@ -37,10 +37,12 @@ public class PrivateKey {
     public func toDer() -> Data {
         let publicKeyString = publicKey().toString(encoded: true)
         let hexadecimal = Der.encodeConstructed(
-            Der.encodePrimitive(tagType: integer, value: 1 as AnyObject),
-            Der.encodePrimitive(tagType: octetString, value: BinaryAscii.hexFromInt(self.secret) as AnyObject),
-            Der.encodePrimitive(tagType: oidContainer, value: Der.encodePrimitive(tagType: object, value: self.curve.oid as AnyObject) as AnyObject),
-            Der.encodePrimitive(tagType: publicKeyPointContainer, value: Der.encodePrimitive(tagType: bitString, value: publicKeyString as AnyObject) as AnyObject)
+            Der.encodeInteger(number: 1),
+            Der.encodeOctetString(BinaryAscii.hexFromInt(self.secret)),
+            Der.encodeOidContainer(
+                Der.encodeObject(self.curve.oid)),
+            Der.encodePublicKeyPointContainer(
+                Der.encodeBitString(publicKeyString))
         )
                 
         return BinaryAscii.dataFromHex(hexadecimal)

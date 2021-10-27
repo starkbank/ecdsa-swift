@@ -54,48 +54,14 @@ let hexTagtoType = [
 public class Der {
     
     public static func encodeConstructed(_ components: String...) -> String {
-        return encodePrimitive(tagType: sequence, value: components.joined(separator: "") as AnyObject)
+        return encodeSequence(components.joined(separator: ""))
     }
     
-    public static func encodePrimitive(tagType: String, value: AnyObject) -> String {
-        var data: String = ""
-        var tag: String = ""
-        if (tagType == integer) {
-            data = encodeInteger(number: BigInt(String(describing: value))!)
-            tag = typeToHexTag.integer.rawValue
-        }
-        if (tagType == object) {
-            data = Oid.oidToHex(oid: value as! Array<Int>)
-            tag = typeToHexTag.object.rawValue
-        }
-        if (tagType == sequence) {
-            data = value as! String
-            tag = typeToHexTag.sequence.rawValue
-        }
-        if (tagType == bitString) {
-            data = value as! String
-            tag = typeToHexTag.bitString.rawValue
-        }
-        if (tagType == publicKeyPointContainer) {
-            data = value as! String
-            tag = typeToHexTag.publicKeyPointContainer.rawValue
-        }
-        if (tagType == octetString) {
-            data = value as! String
-            tag = typeToHexTag.octetString.rawValue
-        }
-        if (tagType == object) {
-            data = Oid.oidToHex(oid: value as! [Int])
-            tag = typeToHexTag.object.rawValue
-        }
-        if (tagType == oidContainer) {
-            data = value as! String
-            tag = typeToHexTag.oidContainer.rawValue
-        }
+    private static func addPrefix(_ tag: String, _ data: String) -> String {
         return String(format: "%@%@%@", tag, generateLengthBytes(hexadecimal: data), data)
     }
     
-    static func encodeInteger(number: BigInt) -> String {
+    internal static func encodeInteger(number: BigInt) -> String {
         var hexadecimal = BinaryAscii.hexFromInt(abs(number))
         if (number < 0) {
             let bitCount = 4 * hexadecimal.count
@@ -106,7 +72,32 @@ public class Der {
         if (bits.prefix(1) == "1") {
             hexadecimal = "00" + hexadecimal
         }
-        return hexadecimal
+        return addPrefix(typeToHexTag.integer.rawValue, hexadecimal)
+    }
+    
+    internal static func encodeObject(_ oid: Array<Int>) -> String {
+        let hexadecimal = Oid.oidToHex(oid: oid)
+        return addPrefix(typeToHexTag.object.rawValue, hexadecimal)
+    }
+    
+    internal static func encodeSequence(_ sequence: String) -> String {
+        return addPrefix(typeToHexTag.sequence.rawValue, sequence)
+    }
+    
+    internal static func encodeBitString(_ bitString: String) -> String {
+        return addPrefix(typeToHexTag.bitString.rawValue, bitString)
+    }
+    
+    internal static func encodePublicKeyPointContainer(_ publicKeyPoint: String) -> String {
+        return addPrefix(typeToHexTag.publicKeyPointContainer.rawValue, publicKeyPoint)
+    }
+    
+    internal static func encodeOctetString(_ string: String) -> String {
+        return addPrefix(typeToHexTag.octetString.rawValue, string)
+    }
+    
+    internal static func encodeOidContainer(_ string: String) -> String {
+        return addPrefix(typeToHexTag.oidContainer.rawValue, string)
     }
     
     static func parse(hexadecimal: inout String) throws -> Array<Any> {
@@ -123,7 +114,8 @@ public class Der {
                 
         let start = hexadecimal.index(hexadecimal.startIndex, offsetBy: lengthBytes)
         let endOffset = lengthBytes + length - 1
-        let end = endOffset <= hexadecimal.count ?
+        let isEndOfHexadecimal = endOffset <= hexadecimal.count
+        let end = isEndOfHexadecimal ?
             hexadecimal.index(hexadecimal.startIndex, offsetBy: endOffset) :
             hexadecimal.index(hexadecimal.startIndex, offsetBy: hexadecimal.count - 1)
         var content = endOffset != 1 ? String(hexadecimal[start...end]) : ""

@@ -41,8 +41,8 @@ public class Signature {
     
     public func toString() -> String {
         return Der.encodeConstructed(
-            Der.encodePrimitive(tagType: integer, value: self.r as AnyObject),
-            Der.encodePrimitive(tagType: integer, value: self.s as AnyObject)
+            Der.encodeInteger(number: self.r),
+            Der.encodeInteger(number: self.s)
         )
     }
     

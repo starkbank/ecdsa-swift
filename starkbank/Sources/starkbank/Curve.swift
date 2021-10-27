@@ -54,8 +54,20 @@ public let secp256k1 = CurveFp(
     oid: [1, 3, 132, 0, 10]
 )
 
+public let prime256v1 = CurveFp(
+    name: "prime256v1",
+    A: BigInt("ffffffff00000001000000000000000000000000fffffffffffffffffffffffc", radix: 16)!,
+    B: BigInt("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b", radix: 16)!,
+    P: BigInt("ffffffff00000001000000000000000000000000ffffffffffffffffffffffff", radix: 16)!,
+    N: BigInt("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551", radix: 16)!,
+    Gx: BigInt("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", radix: 16)!,
+    Gy: BigInt("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5", radix: 16)!,
+    oid: [1, 2, 840, 10045, 3, 1, 7]
+)
+
 let supportedCurves = [
-    secp256k1
+    secp256k1,
+    prime256v1
 ]
 
 let curvesByOid = supportedCurves.reduce([Array<Int>: CurveFp]()) { (dict, curve) -> [Array<Int>: CurveFp] in
