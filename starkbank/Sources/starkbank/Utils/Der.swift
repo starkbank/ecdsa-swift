@@ -8,176 +8,248 @@
 import Foundation
 import BigInt
 
-let hexAt = 0x00
-let hexB = 0x02
-let hexC = 0x03
-let hexD = 0x04
-let hexF = 0x06
-let hex0 = 0x30
+let integer = "integer"
+let bitString = "bitString"
+let octetString = "octetString"
+let null = "null"
+let object = "object"
+let printableString = "printableString"
+let utcTime = "utcTime"
+let sequence = "sequence"
+let set = "set"
+let oidContainer = "oidContainer"
+let publicKeyPointContainer = "publicKeyPointContainer"
+let certificateCustom = "certificateCustom"
 
-let hex31 = 0x1f
-let hex127 = 0x7f
-let hex129 = 0xa0
-let hex160 = 0x80
-let hex224 = 0xe0
-
-//let bytesHexAt = BinaryAscii.binaryFromHex(hexAt)
-//let bytesHexB = BinaryAscii.binaryFromHex(hexB)
-//let bytesHexC = BinaryAscii.binaryFromHex(hexC)
-//let bytesHexD = BinaryAscii.binaryFromHex(hexD)
-//let bytesHexF = BinaryAscii.binaryFromHex(hexF)
-//let bytesHex0 = BinaryAscii.binaryFromHex(hex0)
-
-
-class Der {
-    
-    //METODO VALIDADO EM OUTRO SDK
-    func encodedSequence(encodedPieces: [Data]) -> Data {
-        var sequence = Data()
-        var totalLengthLen = 0;
-        for i in stride(from: 0, to: encodedPieces.count, by: 1) {
-            sequence.append(encodedPieces[i])
-            
-            totalLengthLen += encodedPieces[i].count
-        }
-        var joinedData = Data()
-        joinedData.append(Data([UInt8(hex0)]))
-        
-        joinedData.append(_encodeLength(totalLengthLen))
-        var combinedData = Data()
-        for item in sequence {
-            combinedData.append(item)
-        }
-        joinedData.append(combinedData)
-        return joinedData
-    }
-    
-    func encodeInteger(x: BigInt) {
-        if(x < 0) {
-            return print("x cannot be negative")
-        }
-        
-        var t = String(x)
-        
-        if((t.count % 2) != 0) {
-            t = "0" + t
-        }
-        
-//        var x = BinaryAscii.binaryFromHex(hex: t)
-        
-    }
-   
-    func encodeOid(pieces: [Int]) throws -> Data {
-        var array = pieces
-        let first = array.removeFirst()
-        let second = array.removeFirst()
-//        if(first > 2) {
-//            throw Error.moreOrEqualTwo
-//        }
-//
-//        if(second > 39) {
-//            throw Error.moreOrEqualTwo
-//        }
-//
-//
-
-        var body =  Data()
-        body.append(String(UnicodeScalar(UInt8(40 * first + second))).data(using: .isoLatin1)!)
-        array.forEach { (d) in
-            body.append(encodeNumber(number: d))
-        }
-                
-        var result = Data()
-        result.append(Data([UInt8(hexF)]))
-        result.append(_encodeLength(body.count))
-        result.append(body)
-        
-        return result
-    }
-        
-    func toPem(der: Data, name: String) -> String {
-        let b64 = der.base64EncodedString()
-        var lines = [("-----BEGIN " + name + "-----\n")]
-        for start in stride(from: 0, to: b64.count, by: 64) {
-            lines.append(b64[start..<start+64] + "\n")
-        }
-        lines.append("-----END " + name + "-----\n");
-        return lines.joined()
-    }
-    
-    func fromPem(pem: String) -> String {
-        let split = pem.split(separator: "\n")
-        var stripped = ""
-        for i in stride(from: 0, to: split.count, by: 1) {
-            if(!split[i].starts(with: "-----")) {
-                stripped += split[i].trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-        }
-        return Base64.decode(string: stripped)
-    }
-    
-    //METODO VALIDADO EM OUTRO SDK
-    private func encodeNumber(number: Int) -> Data {
-        var n = number
-        var b128Digits: [Int] = []
-        while n > 0 {
-            b128Digits.insert((n & hex127) | hex160, at: 0)
-            n >>= 7
-        }
-        
-        if ((b128Digits.count == 0)) {
-            b128Digits.append(0);
-        }
-        
-        b128Digits[b128Digits.count - 1] &= hex127;
-        
-        var encodedDigits = Data()
-        b128Digits.forEach { (d) in
-            encodedDigits.append(String(UnicodeScalar(UInt8(d))).data(using: .isoLatin1)!)
-        }
-        return encodedDigits
-    }
-    
-    
-    private func _encodeLength(_ length: Int) -> Data {
-        assert(length >= 0)
-
-        if (length < hex160) {
-            return String(UnicodeScalar(UInt8(length))).data(using: .isoLatin1)!
-        }
-        
-        var hexString = String(length, radix: 16)
-        if hexString.count % 2 == 1 {
-            hexString = "0" + hexString
-        }
-
-        let s = BinaryAscii.binaryFromHex(hexString)
-        let lengthLen = s.count
-        return (String(UnicodeScalar(UInt8(hex160 | lengthLen))) + String(lengthLen)).data(using: .isoLatin1)!
-    }
-    
-    private func checkSequenceError(string: String, start: String, expected: String) throws {
-        if(!string.starts(with: start)) {
-            return print("wanted sequence (0x" + expected + "), got 0x")
-        }
-    }
-    
-    func encodeBitstring(t: Data) -> Data {
-        print(t.count)
-        var combinedData = Data()
-        combinedData.append(Data([UInt8(hexC)]))
-        combinedData.append(_encodeLength(t.count))
-        combinedData.append(t)
-        return combinedData
-    }
+enum typeToHexTag: String {
+    case integer = "02"
+    case bitString = "03"
+    case octetString = "04"
+    case null = "05"
+    case object = "06"
+    case printableString = "13"
+    case utcTime = "17"
+    case sequence = "30"
+    case set = "31"
+    case oidContainer = "a0"
+    case publicKeyPointContainer = "a1"
+    case certificateCustom = "a3"
 }
 
-enum Error: Swift.Error {
-    case negative
-    case algorithmsFailed
-    case parserError
-    case moreOrEqualTwo
-    case moreOrEqual39
+let hexTagtoType = [
+    "02": integer,
+    "03": bitString,
+    "04": octetString,
+    "05": null,
+    "06": object,
+    "13": printableString,
+    "17": utcTime,
+    "30": sequence,
+    "31": set,
+    "a0": oidContainer,
+    "a1": publicKeyPointContainer,
+    "a3": certificateCustom
+]
+
+public class Der {
+    
+    public static func encodeConstructed(_ components: String...) -> String {
+        return encodePrimitive(tagType: sequence, value: components.joined(separator: "") as AnyObject)
+    }
+    
+    public static func encodePrimitive(tagType: String, value: AnyObject) -> String {
+        var data: String = ""
+        var tag: String = ""
+        if (tagType == integer) {
+            data = encodeInteger(number: BigInt(String(describing: value))!)
+            tag = typeToHexTag.integer.rawValue
+        }
+        if (tagType == object) {
+            data = Oid.oidToHex(oid: value as! Array<Int>)
+            tag = typeToHexTag.object.rawValue
+        }
+        if (tagType == sequence) {
+            data = value as! String
+            tag = typeToHexTag.sequence.rawValue
+        }
+        if (tagType == bitString) {
+            data = value as! String
+            tag = typeToHexTag.bitString.rawValue
+        }
+        if (tagType == publicKeyPointContainer) {
+            data = value as! String
+            tag = typeToHexTag.publicKeyPointContainer.rawValue
+        }
+        if (tagType == octetString) {
+            data = value as! String
+            tag = typeToHexTag.octetString.rawValue
+        }
+        if (tagType == object) {
+            data = Oid.oidToHex(oid: value as! [Int])
+            tag = typeToHexTag.object.rawValue
+        }
+        if (tagType == oidContainer) {
+            data = value as! String
+            tag = typeToHexTag.oidContainer.rawValue
+        }
+        return String(format: "%@%@%@", tag, generateLengthBytes(hexadecimal: data), data)
+    }
+    
+    public static func encodeInteger(number: BigInt) -> String {
+        var hexadecimal = BinaryAscii.hexFromInt(abs(number))
+        if (number < 0) {
+            let bitCount = 4 * hexadecimal.count
+            let twosComplement = BigInt(pow(Double(2), Double(bitCount))) + number
+            return BinaryAscii.hexFromInt(twosComplement)
+        }
+        let bits = BinaryAscii.bitsFromHex(String(hexadecimal.prefix(1)))
+        if (bits.prefix(1) == "1") {
+            hexadecimal = "00" + hexadecimal
+        }
+        return hexadecimal
+    }
+    
+    public static func parse(hexadecimal: inout String) throws -> Array<Any> {
+        if (hexadecimal == "") {
+            return []
+        }
+        let typeByte = String(hexadecimal.prefix(2))
+        var hexEnd = hexadecimal.count - 2
+        hexadecimal = hexEnd > 0 ? String(hexadecimal.suffix(hexEnd)) : String(hexadecimal.suffix(hexadecimal.count))
+        
+        let lengthResult = try readLengthBytes(hexadecimal: &hexadecimal)
+        let length = lengthResult.0
+        let lengthBytes = lengthResult.1
+                
+        let start = hexadecimal.index(hexadecimal.startIndex, offsetBy: lengthBytes)
+        let endOffset = lengthBytes + length - 1
+        let end = endOffset <= hexadecimal.count ? hexadecimal.index(hexadecimal.startIndex, offsetBy: endOffset) : hexadecimal.index(hexadecimal.startIndex, offsetBy: hexadecimal.count - 1)
+        var content = endOffset != 1 ? String(hexadecimal[start...end]) : ""
+        hexEnd = hexadecimal.count - lengthBytes - length
+        hexadecimal = hexEnd > 0 ? String(hexadecimal.suffix(hexEnd)) : ""
+                
+        if (content.count < length) {
+            throw Error.parserError("missing bytes in DER parse")
+        }
+        
+        var contentArray: Array<Any> = [content]
+        let tagData = getTagData(tag: typeByte)
+        if (tagData["isConstructed"] as! Bool) {
+            contentArray = try parse(hexadecimal: &content)
+            return [contentArray] + (try parse(hexadecimal: &hexadecimal))
+        }
+        
+        switch tagData["type"] as! String {
+        case null:
+            contentArray = [parseNull(hexadecimal: content)]
+        case object:
+            contentArray = [parseOid(hexadecimal: content)]
+        case utcTime:
+            contentArray = [parseTime(hexadecimal: content)]
+        case integer:
+            contentArray = [parseInteger(hexadecimal: content)]
+        case printableString:
+            contentArray = [parseString(hexadecimal: content)]
+        default:
+            break
+        }
+        return contentArray + (try parse(hexadecimal: &hexadecimal))
+    }
+    
+    public static func parseAny(contentArray: Array<Any>) -> Array<Any> {
+        return contentArray
+    }
+    
+    public static func parseOid(hexadecimal: String) -> [Int] {
+        return Oid.oidFromHex(hexadecimal: hexadecimal)
+    }
+    
+    public static func parseTime(hexadecimal: String) -> Date {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyMMddHHmmssZ"
+        return dateFormatter.date(from: parseString(hexadecimal: hexadecimal)) ?? Date()
+    }
+    
+    public static func parseString(hexadecimal: String) -> String {
+        return String(data: BinaryAscii.binaryFromHex(hexadecimal), encoding: .utf8)!
+    }
+    
+    public static func parseNull(hexadecimal: String) -> String {
+        return ""
+    }
+    
+    public static func parseInteger(hexadecimal: String) -> BigInt {
+        let integer = BinaryAscii.intFromHex(hexadecimal)
+        let bits = BinaryAscii.bitsFromHex(String(hexadecimal.prefix(1)))
+        if (String(bits.prefix(1)) == "0") {
+            return BigInt(integer)
+        }
+        let bitCount = 4 * hexadecimal.count
+        return BigInt(integer - BigInt(NSDecimalNumber(decimal: pow(2, bitCount)).intValue))
+    }
+    
+    public static func readLengthBytes(hexadecimal: inout String) throws -> (Int, Int) {
+        var lengthBytes = 2
+        let lengthIndicator = BinaryAscii.intFromHex(String(hexadecimal.prefix(lengthBytes)))
+        let isShortForm = lengthIndicator < 128 // checks if first bit of byte is 1 (a.k.a. short-form)
+        if (isShortForm) {
+            let length = lengthIndicator * 2
+            return (Int(length), lengthBytes)
+        }
+        let lengthLength = lengthIndicator - 128 // nullifies first bit of byte (only used as long-form flag)
+        if (lengthLength == 0) {
+            throw Error.parserError("indefinite length encoding located in DER")
+        }
+        lengthBytes += 2 * Int(lengthLength)
+        let start = hexadecimal.index(hexadecimal.startIndex, offsetBy: 2)
+        let end = hexadecimal.index(hexadecimal.startIndex,
+                                    offsetBy: hexadecimal.count > lengthBytes ? lengthBytes - 1 : hexadecimal.count - 1)
+        let range = start...end
+        
+        let length = Int(BinaryAscii.intFromHex(String(hexadecimal[range])) * 2)
+        return (length, lengthBytes)
+    }
+    
+    public static func generateLengthBytes(hexadecimal: String) -> String {
+        let size = BigInt(floor(Double(hexadecimal.count) / 2))
+        let length = BinaryAscii.hexFromInt(size)
+        if size < 128 {
+            return length.zfill(2)
+        }
+        let lengthLength = 128 + BigInt(floor(Double(length.count) / 2))
+        return BinaryAscii.hexFromInt(lengthLength) + length
+    }
+    
+    public static func getTagData(tag: String) -> Dictionary<String, AnyObject> {
+        let bits = BinaryAscii.bitsFromHex(tag)
+        let bit8 = bits[bits.index(bits.startIndex, offsetBy: 0)]
+        let bit7 = bits[bits.index(bits.startIndex, offsetBy: 1)]
+        let bit6 = bits[bits.index(bits.startIndex, offsetBy: 2)]
+        
+        var tagClass: String
+        switch (bit8, bit7) {
+        case ("0", "0"):
+            tagClass = "universal"
+        case ("0", "1"):
+            tagClass = "application"
+        case ("1", "0"):
+            tagClass = "context-specific"
+        case ("1", "1"):
+            tagClass = "private"
+        default:
+            tagClass = ""
+        }
+        
+        let isConstructed = bit6 == "1"
+        
+        let type = hexTagtoType[tag]
+        
+        return [
+            "class": tagClass as AnyObject,
+            "isConstructed": isConstructed as AnyObject,
+            "type": type != nil ? type as AnyObject : "None" as AnyObject
+        ]
+    }
 }
 
 extension String {

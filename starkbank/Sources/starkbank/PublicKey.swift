@@ -18,53 +18,79 @@ public class PublicKey {
         self.curve = curve
     }
     
-    public func toString(encoded: Bool = false) ->  Data {
-        var data = Data()
-        let xString = BinaryAscii.stringFromNumber(number: self.point.x, length: self.curve.length())
-        let yString = BinaryAscii.stringFromNumber(number: self.point.y, length: self.curve.length())
-        
-        print(xString)
-        var byteArray = [UInt8]()
-        for char in xString.utf8{
-            byteArray += [char]
+    public func toString(encoded: Bool = false) ->  String {
+        let baseLength = Int(2 * self.curve.length())
+        let xHex = BinaryAscii.hexFromInt(self.point.x).zfill(baseLength)
+        let yHex = BinaryAscii.hexFromInt(self.point.y).zfill(baseLength)
+        let string = xHex + yHex
+        if encoded {
+            return "0004" + string
         }
-
-        return data
-//            return withUnsafeBytes(of: "\\x00\\x04") { Data($0) } + xString + yString;
-        }
-//        return xString + yString
+        return string
+    }
     
     public func toDer() -> Data {
-        do {
-            let a = Der()
-            let encodeEcAndOid = try a.encodedSequence(encodedPieces:
-                                                        [a.encodeOid(pieces: [1, 2, 840, 10045, 2, 1])])
-            self.toString(encoded: true)
-
-            return a.encodedSequence(encodedPieces: [encodeEcAndOid])
-//            return a.encodedSequence(encodedPieces: [encodeEcAndOid, a.encodeBitstring(t: self.toString(encoded: true))])
-        }
-        catch {
-            print(error)
-        }
-        
-        return Data()
+        let hexadecimal = Der.encodeConstructed(
+            Der.encodeConstructed(
+                Der.encodePrimitive(tagType: object, value: [1, 2, 840, 10045, 2, 1] as AnyObject),
+                Der.encodePrimitive(tagType: object, value: curve.oid as AnyObject)
+            ),
+            Der.encodePrimitive(tagType: bitString, value: toString(encoded: true) as AnyObject)
+        )
+        return BinaryAscii.binaryFromHex(hexadecimal)
     }
     
     public func toPem() -> String {
-        return Der().toPem(der: self.toDer(), name: "PUBLIC KEY")
+        let der = toDer()
+        return createPem(content: BinaryAscii.base64FromString(der).data, template: publicKeyPemTemplate)
     }
     
-    static func fromPem(pem: String) {
-        
+    public static func fromPem(_ pem: String) throws -> PublicKey {
+        let publicKeyPem = getPemContent(pem: pem)
+        return try fromDer(BinaryAscii.stringFromBase64(publicKeyPem))
+
     }
     
-    static func fromDer(der: Data) {
+    public static func fromDer(_ data: Data) throws -> PublicKey{
+        var hexadecimal = BinaryAscii.hexFromString(data)
         
+        let parsed = try Der.parse(hexadecimal: &hexadecimal)[0] as! [Any]
+        let publicKeyOid = (parsed[0] as! [Any])[0] as! [Int]
+        let curveOid = (parsed[0] as! [Any])[1] as! [Int]
+        var pointString = parsed[1] as! String
+        
+        if (publicKeyOid != [1, 2, 840, 10045, 2, 1]) {
+            throw Error.matchError("The Public Key Object Identifier (OID) should be [1, 2, 840, 10045, 2, 1], but {actualOid} was found instead".replacingOccurrences(of: "{actualOid}", with: publicKeyOid.description))
+        }
+        let curve = try getCurveByOid(curveOid)
+        return try fromString(string: &pointString, curve: curve)
     }
     
-    static func fromString(string: String) {
+    public static func fromString(string: inout String, curve: CurveFp = secp256k1, validatePoint: Bool = true) throws -> PublicKey {
+        let baseLength = 2 * curve.length()
+        if (string.count > 2 * baseLength && String(string.prefix(4)) == "0004") {
+            string = String(string.suffix(string.count - 4))
+        }
+        let xs = String(string.prefix(Int(baseLength)))
+        let ys = String(string.suffix(Int(baseLength)))
         
+        let point = Point(BinaryAscii.intFromHex(xs), BinaryAscii.intFromHex(ys))
+        
+        if (validatePoint && !curve.contains(p: point)) {
+            throw Error.pointError("Point ({x},{y}) is not valid for curve {name}"
+                                    .replacingOccurrences(of: "{x}", with: String(point.x))
+                                    .replacingOccurrences(of:"{y}", with: String(point.y))
+                                    .replacingOccurrences(of:"{name}", with: curve.name))
+            
+        }
+        
+        return PublicKey(point: point, curve: curve)
     }
     
 }
+
+let publicKeyPemTemplate = """
+-----BEGIN PUBLIC KEY-----
+{content}
+-----END PUBLIC KEY-----
+"""

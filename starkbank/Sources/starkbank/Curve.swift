@@ -11,13 +11,13 @@ import Foundation
 
 public class CurveFp {
     
-    var A: BigInt
-    var B: BigInt
-    var P: BigInt
-    var N: BigInt
-    var G: Point
-    var name: String
-    var oid: [Int]
+    public var A: BigInt
+    public var B: BigInt
+    public var P: BigInt
+    public var N: BigInt
+    public var G: Point
+    public var name: String
+    public var oid: [Int]
     
     init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int]) {
         self.A = A
@@ -57,3 +57,16 @@ public let secp256k1 = CurveFp(
 let supportedCurves = [
     secp256k1
 ]
+
+let curvesByOid = supportedCurves.reduce([Array<Int>: CurveFp]()) { (dict, curve) -> [Array<Int>: CurveFp] in
+    var dict = dict
+    dict[curve.oid] = curve
+    return dict
+}
+
+public func getCurveByOid(_ oid: Array<Int>) throws -> CurveFp {
+    if (curvesByOid[oid] == nil) {
+        throw Error.invalidOidError("Unknown curve with oid {receivedOid}; The following are registered: {registeredOids}".replacingOccurrences(of: "{receivedOid}", with: oid.description).replacingOccurrences(of: "{registeredOids}", with: supportedCurves.description))
+    }
+    return curvesByOid[oid]!
+}

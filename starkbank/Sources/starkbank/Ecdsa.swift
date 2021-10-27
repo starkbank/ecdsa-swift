@@ -13,7 +13,7 @@ public class Ecdsa {
     
     public static func sign(message: String, privateKey: PrivateKey, hashfunc: Hash = Sha256()) -> Signature {
         let hashMessage = hashfunc.digest(message)
-        let numberMessage = BinaryAscii.numberFromString(hashMessage)
+        let numberMessage = BinaryAscii.intFromHex(BinaryAscii.hexFromString(hashMessage as Data))
         let curve = privateKey.curve
         let randNum = RandomInteger.between(BigInt(1), curve.N)
         let randomSignPoint = Math.multiply(curve.G, randNum, curve.N, curve.A, curve.P)
@@ -24,7 +24,7 @@ public class Ecdsa {
     
     public static func verify(message: String, signature: Signature, publicKey: PublicKey, hashfunc: Hash = Sha256()) -> Bool {
         let hashMessage = hashfunc.digest(message)
-        let numberMessage = BinaryAscii.numberFromString(hashMessage)
+        let numberMessage = BinaryAscii.intFromHex(BinaryAscii.hexFromString(hashMessage as Data))
         let curve = publicKey.curve
         let r = signature.r
         let s = signature.s

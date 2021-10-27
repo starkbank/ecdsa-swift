@@ -17,7 +17,6 @@ class RandomInteger {
         - Returns: integer x in the range: min <= x <= max
     */
     static func between(_ min: BigInt, _ max: BigInt) -> BigInt {
-        return BigInt(123)
         return min + BigInt(BigUInt.randomInteger(lessThan: BigUInt(max + 1 - min)))
     }
 }
