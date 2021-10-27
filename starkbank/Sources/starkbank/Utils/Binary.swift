@@ -25,7 +25,7 @@ class BinaryAscii {
     
     static func bitsFromHex(_ hex: String) -> String {
         let binary = String(BigInt(hex, radix: 16)!, radix: 2)
-        return binary.zfill(hex.count * 4)
+        return Helper.zfill(binary, hex.count * 4)
     }
     
     static func dataFromBase64(_ base64: String) -> Data {

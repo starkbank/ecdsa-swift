@@ -19,7 +19,6 @@ let sequence = "sequence"
 let set = "set"
 let oidContainer = "oidContainer"
 let publicKeyPointContainer = "publicKeyPointContainer"
-let certificateCustom = "certificateCustom"
 
 enum typeToHexTag: String {
     case integer = "02"
@@ -33,7 +32,6 @@ enum typeToHexTag: String {
     case set = "31"
     case oidContainer = "a0"
     case publicKeyPointContainer = "a1"
-    case certificateCustom = "a3"
 }
 
 let hexTagtoType = [
@@ -48,7 +46,6 @@ let hexTagtoType = [
     "31": set,
     "a0": oidContainer,
     "a1": publicKeyPointContainer,
-    "a3": certificateCustom
 ]
 
 public class Der {
@@ -208,7 +205,7 @@ public class Der {
         let size = BigInt(floor(Double(hexadecimal.count) / 2))
         let length = BinaryAscii.hexFromInt(size)
         if size < 128 {
-            return length.zfill(2)
+            return Helper.zfill(length, 2)
         }
         let lengthLength = 128 + BigInt(floor(Double(length.count) / 2))
         return BinaryAscii.hexFromInt(lengthLength) + length
