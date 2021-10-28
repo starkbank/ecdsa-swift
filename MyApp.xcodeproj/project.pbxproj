@@ -15,7 +15,21 @@
 		06138DC725DA187C00460DBD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 06138DC525DA187C00460DBD /* LaunchScreen.storyboard */; };
 		06138DD125DA19F000460DBD /* starkbank-ecdsa in Frameworks */ = {isa = PBXBuildFile; productRef = 06138DD025DA19F000460DBD /* starkbank-ecdsa */; };
 		06682417261ADAC4003BE6AB /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = 06682416261ADAC4003BE6AB /* BigInt */; };
+		2FC6155A272AE24400E0D81D /* PrivateKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC61559272AE24400E0D81D /* PrivateKeyTests.swift */; };
+		2FC6155C272AE77900E0D81D /* PublicKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC6155B272AE77900E0D81D /* PublicKeyTests.swift */; };
+		2FC6155E272AEBDE00E0D81D /* SignatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC6155D272AEBDE00E0D81D /* SignatureTests.swift */; };
+		2FC61560272AEE4B00E0D81D /* EcdsaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC6155F272AEE4B00E0D81D /* EcdsaTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2FC61552272ADF6500E0D81D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 06138DAF25DA187C00460DBD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 06138DB625DA187C00460DBD;
+			remoteInfo = MyApp;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		06138DB725DA187C00460DBD /* MyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -27,6 +41,11 @@
 		06138DC625DA187C00460DBD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		06138DC825DA187C00460DBD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		06138DCE25DA198B00460DBD /* starkbank */ = {isa = PBXFileReference; lastKnownFileType = folder; path = starkbank; sourceTree = "<group>"; };
+		2FC6154E272ADF6500E0D81D /* MyAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FC61559272AE24400E0D81D /* PrivateKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateKeyTests.swift; sourceTree = "<group>"; };
+		2FC6155B272AE77900E0D81D /* PublicKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicKeyTests.swift; sourceTree = "<group>"; };
+		2FC6155D272AEBDE00E0D81D /* SignatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureTests.swift; sourceTree = "<group>"; };
+		2FC6155F272AEE4B00E0D81D /* EcdsaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EcdsaTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +58,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2FC6154B272ADF6500E0D81D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -47,6 +73,7 @@
 			children = (
 				06138DCE25DA198B00460DBD /* starkbank */,
 				06138DB925DA187C00460DBD /* MyApp */,
+				2FC6154F272ADF6500E0D81D /* MyAppTests */,
 				06138DB825DA187C00460DBD /* Products */,
 				06138DCF25DA19F000460DBD /* Frameworks */,
 			);
@@ -56,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				06138DB725DA187C00460DBD /* MyApp.app */,
+				2FC6154E272ADF6500E0D81D /* MyAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,6 +107,17 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2FC6154F272ADF6500E0D81D /* MyAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				2FC61559272AE24400E0D81D /* PrivateKeyTests.swift */,
+				2FC6155B272AE77900E0D81D /* PublicKeyTests.swift */,
+				2FC6155D272AEBDE00E0D81D /* SignatureTests.swift */,
+				2FC6155F272AEE4B00E0D81D /* EcdsaTests.swift */,
+			);
+			path = MyAppTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -105,18 +144,40 @@
 			productReference = 06138DB725DA187C00460DBD /* MyApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		2FC6154D272ADF6500E0D81D /* MyAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2FC61556272ADF6500E0D81D /* Build configuration list for PBXNativeTarget "MyAppTests" */;
+			buildPhases = (
+				2FC6154A272ADF6500E0D81D /* Sources */,
+				2FC6154B272ADF6500E0D81D /* Frameworks */,
+				2FC6154C272ADF6500E0D81D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2FC61553272ADF6500E0D81D /* PBXTargetDependency */,
+			);
+			name = MyAppTests;
+			productName = MyAppTests;
+			productReference = 2FC6154E272ADF6500E0D81D /* MyAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		06138DAF25DA187C00460DBD /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1130;
+				LastSwiftUpdateCheck = 1300;
 				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = "Stark Bank";
 				TargetAttributes = {
 					06138DB625DA187C00460DBD = {
 						CreatedOnToolsVersion = 11.3;
+					};
+					2FC6154D272ADF6500E0D81D = {
+						CreatedOnToolsVersion = 13.0;
+						TestTargetID = 06138DB625DA187C00460DBD;
 					};
 				};
 			};
@@ -137,6 +198,7 @@
 			projectRoot = "";
 			targets = (
 				06138DB625DA187C00460DBD /* MyApp */,
+				2FC6154D272ADF6500E0D81D /* MyAppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -149,6 +211,13 @@
 				06138DC725DA187C00460DBD /* LaunchScreen.storyboard in Resources */,
 				06138DC425DA187C00460DBD /* Assets.xcassets in Resources */,
 				06138DC225DA187C00460DBD /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2FC6154C272ADF6500E0D81D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,7 +234,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2FC6154A272ADF6500E0D81D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2FC6155C272AE77900E0D81D /* PublicKeyTests.swift in Sources */,
+				2FC6155E272AEBDE00E0D81D /* SignatureTests.swift in Sources */,
+				2FC61560272AEE4B00E0D81D /* EcdsaTests.swift in Sources */,
+				2FC6155A272AE24400E0D81D /* PrivateKeyTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2FC61553272ADF6500E0D81D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 06138DB625DA187C00460DBD /* MyApp */;
+			targetProxy = 2FC61552272ADF6500E0D81D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		06138DC025DA187C00460DBD /* Main.storyboard */ = {
@@ -335,6 +423,56 @@
 			};
 			name = Release;
 		};
+		2FC61554272ADF6500E0D81D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.starkbank.MyAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyApp.app/MyApp";
+			};
+			name = Debug;
+		};
+		2FC61555272ADF6500E0D81D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.starkbank.MyAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyApp.app/MyApp";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -352,6 +490,15 @@
 			buildConfigurations = (
 				06138DCC25DA187C00460DBD /* Debug */,
 				06138DCD25DA187C00460DBD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2FC61556272ADF6500E0D81D /* Build configuration list for PBXNativeTarget "MyAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2FC61554272ADF6500E0D81D /* Debug */,
+				2FC61555272ADF6500E0D81D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

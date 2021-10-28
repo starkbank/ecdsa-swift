@@ -29,9 +29,16 @@ public class PrivateKey {
         )
         return PublicKey(point: publicPoint, curve: curve)
     }
+            
+    public func toPem() -> String {
+        let der = self.toDer()
+        let base64 = BinaryAscii.base64FromData(der)
+        return createPem(content: base64, template: pemTemplate)
+    }
     
-    public func toString() ->  String {
-        return BinaryAscii.hexFromInt(self.secret)
+    public static func fromPem(_ string: String) throws -> PrivateKey {
+        let privateKeyPem = getPemContent(pem: string)
+        return try fromDer(BinaryAscii.dataFromBase64(privateKeyPem))
     }
     
     public func toDer() -> Data {
@@ -48,17 +55,6 @@ public class PrivateKey {
         return BinaryAscii.dataFromHex(hexadecimal)
     }
     
-    public func toPem() -> String {
-        let der = self.toDer()
-        let base64 = BinaryAscii.base64FromData(der)
-        return createPem(content: base64, template: pemTemplate)
-    }
-    
-    public static func fromPem(_ string: String) throws -> PrivateKey {
-        let privateKeyPem = getPemContent(pem: string)
-        return try fromDer(BinaryAscii.dataFromBase64(privateKeyPem))
-    }
-    
     public static func fromDer(_ data: Data) throws -> PrivateKey {
         var hexadecimal = BinaryAscii.hexFromData(data)
 
@@ -73,7 +69,7 @@ public class PrivateKey {
         }
         
         let curve = try getCurveByOid(curveData)
-        let privateKey = fromString(string: secretHex, curve: curve)
+        let privateKey = fromString(secretHex, curve)
         
         if (privateKey.publicKey().toString(encoded: true) != publicKeyString) {
             throw Error.matchError("The public key described inside the private key file doesn't match the actual public key of the pair")
@@ -81,7 +77,11 @@ public class PrivateKey {
         return privateKey
     }
     
-    public static func fromString(string: String, curve: CurveFp = secp256k1) -> PrivateKey {
+    public func toString() ->  String {
+        return BinaryAscii.hexFromInt(self.secret)
+    }
+    
+    public static func fromString(_ string: String, _ curve: CurveFp = secp256k1) -> PrivateKey {
         return PrivateKey(curve: curve, secret: BinaryAscii.intFromHex(string))
     }
 }

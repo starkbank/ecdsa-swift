@@ -17,16 +17,16 @@ public class PublicKey {
         self.point = point
         self.curve = curve
     }
+        
+    public func toPem() -> String {
+        let der = toDer()
+        return createPem(content: BinaryAscii.base64FromData(der), template: publicKeyPemTemplate)
+    }
     
-    public func toString(encoded: Bool = false) ->  String {
-        let baseLength = Int(2 * self.curve.length())
-        let xHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.x), baseLength)
-        let yHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.y), baseLength)
-        let string = xHex + yHex
-        if encoded {
-            return "0004" + string
-        }
-        return string
+    public static func fromPem(_ pem: String) throws -> PublicKey {
+        let publicKeyPem = getPemContent(pem: pem)
+        return try fromDer(BinaryAscii.dataFromBase64(publicKeyPem))
+
     }
     
     public func toDer() -> Data {
@@ -38,17 +38,6 @@ public class PublicKey {
             Der.encodeBitString(toString(encoded: true))
         )
         return BinaryAscii.dataFromHex(hexadecimal)
-    }
-    
-    public func toPem() -> String {
-        let der = toDer()
-        return createPem(content: BinaryAscii.base64FromData(der), template: publicKeyPemTemplate)
-    }
-    
-    public static func fromPem(_ pem: String) throws -> PublicKey {
-        let publicKeyPem = getPemContent(pem: pem)
-        return try fromDer(BinaryAscii.dataFromBase64(publicKeyPem))
-
     }
     
     public static func fromDer(_ data: Data) throws -> PublicKey{
@@ -64,10 +53,21 @@ public class PublicKey {
                                     .replacingOccurrences(of: "{actualOid}", with: publicKeyOid.description))
         }
         let curve = try getCurveByOid(curveOid)
-        return try fromString(string: &pointString, curve: curve)
+        return try fromString(&pointString, curve)
     }
     
-    public static func fromString(string: inout String, curve: CurveFp = secp256k1, validatePoint: Bool = true) throws -> PublicKey {
+    public func toString(encoded: Bool = false) ->  String {
+        let baseLength = Int(2 * self.curve.length())
+        let xHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.x), baseLength)
+        let yHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.y), baseLength)
+        let string = xHex + yHex
+        if encoded {
+            return "0004" + string
+        }
+        return string
+    }
+    
+    public static func fromString(_ string: inout String, _ curve: CurveFp = secp256k1, validatePoint: Bool = true) throws -> PublicKey {
         let baseLength = 2 * curve.length()
         if (string.count > 2 * baseLength && String(string.prefix(4)) == "0004") {
             string = String(string.suffix(string.count - 4))
