@@ -37,7 +37,7 @@ public class PrivateKey {
     }
     
     public static func fromPem(_ string: String) throws -> PrivateKey {
-        let privateKeyPem = getPemContent(pem: string)
+        let privateKeyPem = try getPemContent(pem: string, template: pemTemplate)
         return try fromDer(BinaryAscii.dataFromBase64(privateKeyPem))
     }
     

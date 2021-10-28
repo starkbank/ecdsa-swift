@@ -24,9 +24,8 @@ public class PublicKey {
     }
     
     public static func fromPem(_ pem: String) throws -> PublicKey {
-        let publicKeyPem = getPemContent(pem: pem)
+        let publicKeyPem = try getPemContent(pem: pem, template: publicKeyPemTemplate)
         return try fromDer(BinaryAscii.dataFromBase64(publicKeyPem))
-
     }
     
     public func toDer() -> Data {

@@ -7,9 +7,19 @@
 
 import Foundation
 
-func getPemContent(pem: String) -> String {
-    let regex = "(?i)(\n)?-* ?(BEGIN|END) ((PRIVATE EC|PUBLIC EC)|(EC PRIVATE|EC PUBLIC)|(PRIVATE|PUBLIC)) KEY ?-*(\n)?"
-    return pem.replacingOccurrences(of: regex, with: "", options: [.regularExpression]).split(whereSeparator: \.isNewline).joined(separator: "")
+func getPemContent(pem: String, template: String) throws -> String {
+    let parsedPem = pem.replacingOccurrences(of: "\n", with: "")
+    let parsedTemplate = template
+        .replacingOccurrences(of: "{content}", with: "(.*)")
+        .replacingOccurrences(of: "\n", with: "")
+    
+    let captureRegex = try! NSRegularExpression(pattern: parsedTemplate, options: [])
+    let matches = captureRegex.matches(in: parsedPem, options: [], range: NSRange(parsedTemplate.startIndex..<parsedPem.endIndex, in: parsedPem))
+    
+    guard let match = matches.first else {
+        throw Error.matchError("Pem not found")
+    }
+    return (parsedPem as NSString).substring(with: match.range(at: 1)) as String
 }
 
 func createPem(content: String, template: String) -> String {
