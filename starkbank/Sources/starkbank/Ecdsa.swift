@@ -11,11 +11,11 @@ import Foundation
 
 public class Ecdsa {
     
-    public static func sign(message: String, privateKey: PrivateKey, hashfunc: Hash = Sha256()) -> Signature {
+    public static func sign(message: String, privateKey: PrivateKey, hashfunc: Hash = Sha256()) throws -> Signature {
         let hashMessage = hashfunc.digest(message)
         let numberMessage = BinaryAscii.intFromHex(BinaryAscii.hexFromData(hashMessage as Data))
         let curve = privateKey.curve
-        let randNum = RandomInteger.between(BigInt(1), curve.N)
+        let randNum = try RandomInteger.between(minimum: BigInt(1), maximum: curve.N)
         let randomSignPoint = Math.multiply(curve.G, randNum, curve.N, curve.A, curve.P)
         let r = randomSignPoint.x.modulus(curve.N)
         let s = ((numberMessage + r * privateKey.secret) * (Math.inv(randNum, curve.N))).modulus(curve.N)

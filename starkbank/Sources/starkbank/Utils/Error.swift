@@ -13,4 +13,5 @@ enum Error: Swift.Error {
     case matchError(String)
     case invalidOidError(String)
     case pointError(String)
+    case generationError(String)
 }

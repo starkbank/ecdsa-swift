@@ -14,9 +14,13 @@ public class PrivateKey {
     public var curve: CurveFp
     public var secret: BigInt
     
-    public init(curve: CurveFp = secp256k1, secret: BigInt? = nil) {
+    public init(curve: CurveFp = secp256k1, secret: BigInt? = nil) throws {
         self.curve = curve
-        self.secret = secret ?? RandomInteger.between(BigInt(1), curve.N - BigInt(1))
+        if (secret == nil) {
+            self.secret = try RandomInteger.between(minimum: BigInt(1), maximum: curve.N - BigInt(1))
+            return
+        }
+        self.secret = secret!
     }
     
     public func publicKey() -> PublicKey {
@@ -69,7 +73,7 @@ public class PrivateKey {
         }
         
         let curve = try getCurveByOid(curveData)
-        let privateKey = fromString(secretHex, curve)
+        let privateKey = try fromString(secretHex, curve)
         
         if (privateKey.publicKey().toString(encoded: true) != publicKeyString) {
             throw Error.matchError("The public key described inside the private key file doesn't match the actual public key of the pair")
@@ -81,8 +85,8 @@ public class PrivateKey {
         return BinaryAscii.hexFromInt(self.secret)
     }
     
-    public static func fromString(_ string: String, _ curve: CurveFp = secp256k1) -> PrivateKey {
-        return PrivateKey(curve: curve, secret: BinaryAscii.intFromHex(string))
+    public static func fromString(_ string: String, _ curve: CurveFp = secp256k1) throws -> PrivateKey {
+        return try PrivateKey(curve: curve, secret: BinaryAscii.intFromHex(string))
     }
 }
 

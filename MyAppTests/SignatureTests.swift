@@ -11,12 +11,11 @@ import XCTest
 @testable import starkbank
 
 class SignatureTests: XCTestCase {
-
-    var privateKey = PrivateKey()
     
     func testDerConversion() throws {
+        let privateKey = try PrivateKey()
         let message = "This is a text message"
-        let signature1 = Ecdsa.sign(message: message, privateKey: privateKey)
+        let signature1 = try Ecdsa.sign(message: message, privateKey: privateKey)
         
         let der = signature1.toDer()
         let signature2 = try Signature.fromDer(der)
@@ -28,8 +27,9 @@ class SignatureTests: XCTestCase {
     }
 
     func testBase64Conversion() throws {
+        let privateKey = try PrivateKey()
         let message = "This is a text message"
-        let signature1 = Ecdsa.sign(message: message, privateKey: privateKey)
+        let signature1 = try Ecdsa.sign(message: message, privateKey: privateKey)
         
         let base64 = signature1.toBase64()
         let signature2 = try Signature.fromBase64(base64)

@@ -57,8 +57,8 @@ public class PublicKey {
     
     public func toString(encoded: Bool = false) ->  String {
         let baseLength = Int(2 * self.curve.length())
-        let xHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.x), baseLength)
-        let yHex = Helper.zfill(BinaryAscii.hexFromInt(self.point.y), baseLength)
+        let xHex = StringHelper.zfill(BinaryAscii.hexFromInt(self.point.x), baseLength)
+        let yHex = StringHelper.zfill(BinaryAscii.hexFromInt(self.point.y), baseLength)
         let string = xHex + yHex
         if encoded {
             return "0004" + string

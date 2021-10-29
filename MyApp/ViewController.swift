@@ -18,14 +18,18 @@ class ViewController: UIViewController {
         super.viewDidLoad()
 
 //        ECDSA - testVerifyRightMessage
-        let privateKey = PrivateKey()
-        let publicKey = privateKey.publicKey()
+        do {
+            let privateKey = try PrivateKey()
+            let publicKey = privateKey.publicKey()
 
-        let message = "This is the right message"
+            let message = "This is the right message"
 
-        let signature = Ecdsa.sign(message: message, privateKey: privateKey)
-        let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)
-        
-        self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)\n\n v:\(isValid)"
+            let signature = try Ecdsa.sign(message: message, privateKey: privateKey)
+            let isValid = Ecdsa.verify(message: message, signature: signature, publicKey: publicKey)
+            
+            self.textView.text = " r:\(signature.r)\n\n s:\(signature.s)\n\n v:\(isValid)"
+        } catch {
+            print("Error")
+        }
     }
 }

@@ -12,9 +12,8 @@ import XCTest
 
 class PublicKeyTests: XCTestCase {
     
-    var privateKey = PrivateKey()
-    
     func testPemConversion() throws {
+        let privateKey = try PrivateKey()
         let publicKey1 = privateKey.publicKey()
         let pem = publicKey1.toPem()
         let publicKey2 = try PublicKey.fromPem(pem)
@@ -35,6 +34,7 @@ class PublicKeyTests: XCTestCase {
     }
     
     func testDerConversion() throws {
+        let privateKey = try PrivateKey()
         let publicKey1 = privateKey.publicKey()
         let der = publicKey1.toDer()
         let publicKey2 = try PublicKey.fromDer(der)
@@ -55,6 +55,7 @@ class PublicKeyTests: XCTestCase {
     }
 
     func testStringConversion() throws {
+        let privateKey = try PrivateKey()
         let publicKey1 = privateKey.publicKey()
         var string = publicKey1.toString()
         let publicKey2 = try PublicKey.fromString(&string)

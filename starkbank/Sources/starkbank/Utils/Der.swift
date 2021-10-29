@@ -205,7 +205,7 @@ public class Der {
         let size = BigInt(floor(Double(hexadecimal.count) / 2))
         let length = BinaryAscii.hexFromInt(size)
         if size < 128 {
-            return Helper.zfill(length, 2)
+            return StringHelper.zfill(length, 2)
         }
         let lengthLength = 128 + BigInt(floor(Double(length.count) / 2))
         return BinaryAscii.hexFromInt(lengthLength) + length

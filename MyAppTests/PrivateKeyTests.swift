@@ -11,10 +11,9 @@ import XCTest
 @testable import starkbank
 
 class PrivateKeyTests: XCTestCase {
-
-    var privateKey = PrivateKey()
     
     func testPemConversion() throws {
+        let privateKey = try PrivateKey()
         let pem = privateKey.toPem()
         let privateKey2 = try PrivateKey.fromPem(pem)
         let test1 = privateKey.secret == privateKey2.secret
@@ -32,6 +31,7 @@ class PrivateKeyTests: XCTestCase {
     }
     
     func testDerConversion() throws {
+        let privateKey = try PrivateKey()
         let der = privateKey.toDer()
         let privateKey2 = try PrivateKey.fromDer(der)
         let test1 = privateKey.secret == privateKey2.secret
@@ -49,8 +49,9 @@ class PrivateKeyTests: XCTestCase {
     }
     
     func testStringConversion() throws {
+        let privateKey = try PrivateKey()
         let string = privateKey.toString()
-        let privateKey2 = PrivateKey.fromString(string)
+        let privateKey2 = try PrivateKey.fromString(string)
         let test1 = privateKey.secret == privateKey2.secret
         let test2 = privateKey.curve.A == privateKey2.curve.A &&
             privateKey.curve.B == privateKey2.curve.B &&
