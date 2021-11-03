@@ -20,10 +20,8 @@ class SignatureTests: XCTestCase {
         let der = signature1.toDer()
         let signature2 = try Signature.fromDer(der)
         
-        let test1 = signature1.r == signature2.r
-        let test2 = signature1.s == signature2.s
-        XCTAssertTrue(test1)
-        XCTAssertTrue(test2)
+        XCTAssertTrue(signature1.r == signature2.r)
+        XCTAssertTrue(signature1.s == signature2.s)
     }
 
     func testBase64Conversion() throws {
@@ -34,9 +32,7 @@ class SignatureTests: XCTestCase {
         let base64 = signature1.toBase64()
         let signature2 = try Signature.fromBase64(base64)
         
-        let test1 = signature1.r == signature2.r
-        let test2 = signature1.s == signature2.s
-        XCTAssertTrue(test1)
-        XCTAssertTrue(test2)
+        XCTAssertTrue(signature1.r == signature2.r)
+        XCTAssertTrue(signature1.s == signature2.s)
     }
 }

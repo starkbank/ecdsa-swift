@@ -53,11 +53,7 @@ public class Der {
     public static func encodeConstructed(_ components: String...) -> String {
         return encodeSequence(components.joined(separator: ""))
     }
-    
-    private static func addPrefix(_ tag: String, _ data: String) -> String {
-        return String(format: "%@%@%@", tag, generateLengthBytes(hexadecimal: data), data)
-    }
-    
+        
     internal static func encodeInteger(number: BigInt) -> String {
         var hexadecimal = BinaryAscii.hexFromInt(abs(number))
         if (number < 0) {
@@ -95,6 +91,10 @@ public class Der {
     
     internal static func encodeOidContainer(_ string: String) -> String {
         return addPrefix(typeToHexTag.oidContainer.rawValue, string)
+    }
+    
+    internal static func addPrefix(_ tag: String, _ data: String) -> String {
+        return String(format: "%@%@%@", tag, generateLengthBytes(hexadecimal: data), data)
     }
     
     static func parse(hexadecimal: inout String) throws -> Array<Any> {
@@ -147,29 +147,25 @@ public class Der {
         return contentArray + (try parse(hexadecimal: &hexadecimal))
     }
     
-    static func parseAny(contentArray: Array<Any>) -> Array<Any> {
-        return contentArray
-    }
-    
-    static func parseOid(hexadecimal: String) -> [Int] {
+    private static func parseOid(hexadecimal: String) -> [Int] {
         return Oid.oidFromHex(hexadecimal: hexadecimal)
     }
     
-    static func parseTime(hexadecimal: String) -> Date {
+    private static func parseTime(hexadecimal: String) -> Date {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyMMddHHmmssZ"
         return dateFormatter.date(from: parseString(hexadecimal: hexadecimal)) ?? Date()
     }
     
-    static func parseString(hexadecimal: String) -> String {
+    private static func parseString(hexadecimal: String) -> String {
         return String(data: BinaryAscii.dataFromHex(hexadecimal), encoding: .utf8)!
     }
     
-    static func parseNull(hexadecimal: String) -> String {
-        return ""
+    private static func parseNull(hexadecimal: String) {
+        return
     }
     
-    static func parseInteger(hexadecimal: String) -> BigInt {
+    private static func parseInteger(hexadecimal: String) -> BigInt {
         let integer = BinaryAscii.intFromHex(hexadecimal)
         let bits = BinaryAscii.bitsFromHex(String(hexadecimal.prefix(1)))
         if (String(bits.prefix(1)) == "0") {
@@ -179,7 +175,7 @@ public class Der {
         return BigInt(integer - BigInt(NSDecimalNumber(decimal: pow(2, bitCount)).intValue))
     }
     
-    static func readLengthBytes(hexadecimal: inout String) throws -> (Int, Int) {
+    private static func readLengthBytes(hexadecimal: inout String) throws -> (Int, Int) {
         var lengthBytes = 2
         let lengthIndicator = BinaryAscii.intFromHex(String(hexadecimal.prefix(lengthBytes)))
         let isShortForm = lengthIndicator < 128 // checks if first bit of byte is 1 (a.k.a. short-form)
@@ -201,7 +197,7 @@ public class Der {
         return (length, lengthBytes)
     }
     
-    static func generateLengthBytes(hexadecimal: String) -> String {
+    private static func generateLengthBytes(hexadecimal: String) -> String {
         let size = BigInt(floor(Double(hexadecimal.count) / 2))
         let length = BinaryAscii.hexFromInt(size)
         if size < 128 {
@@ -211,7 +207,7 @@ public class Der {
         return BinaryAscii.hexFromInt(lengthLength) + length
     }
     
-    static func getTagData(tag: String) -> Dictionary<String, AnyObject> {
+    private static func getTagData(tag: String) -> Dictionary<String, AnyObject> {
         let bits = BinaryAscii.bitsFromHex(tag)
         let bit8 = bits[bits.index(bits.startIndex, offsetBy: 0)]
         let bit7 = bits[bits.index(bits.startIndex, offsetBy: 1)]
@@ -243,8 +239,8 @@ public class Der {
     }
 }
 
-extension String {
-    var data: Data {
-        return Data(self.utf8)
-    }
-}
+//extension String {
+//    var data: Data {
+//        return Data(self.utf8)
+//    }
+//}

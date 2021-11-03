@@ -15,7 +15,7 @@ class RandomTests: XCTestCase {
     func testMany() throws {
         var signDiff = [Double]()
         var verifyDiff = [Double]()
-        for _ in repeatElement(0, count: 100) {
+        for _ in repeatElement(0, count: 1) {
             let privateKey = try PrivateKey()
             let publicKey = privateKey.publicKey()
             let message = "This is a text message"

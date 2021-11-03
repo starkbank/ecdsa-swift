@@ -8,16 +8,15 @@
 import Foundation
 
 func getPemContent(pem: String, template: String) throws -> String {
-    let parsedPem = pem.replacingOccurrences(of: "\n", with: "")
-    let parsedTemplate = template
+    let parsedPem = String(pem.filter { !"\n\r".contains($0) })
+    let parsedTemplate = String(template.filter { !"\n\r".contains($0) })
         .replacingOccurrences(of: "{content}", with: "(.*)")
-        .replacingOccurrences(of: "\n", with: "")
     
     let captureRegex = try! NSRegularExpression(pattern: parsedTemplate, options: [])
     let matches = captureRegex.matches(in: parsedPem, options: [], range: NSRange(parsedTemplate.startIndex..<parsedPem.endIndex, in: parsedPem))
     
     guard let match = matches.first else {
-        throw Error.matchError("Pem not found")
+        throw Error.matchError("PEM not found")
     }
     return (parsedPem as NSString).substring(with: match.range(at: 1)) as String
 }
