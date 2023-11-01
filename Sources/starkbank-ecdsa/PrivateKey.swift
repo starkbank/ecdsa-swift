@@ -86,7 +86,7 @@ public class PrivateKey {
     }
     
     public static func fromString(string: String, curve: CurveFp = secp256k1) throws -> PrivateKey {
-        return try PrivateKey(curve: curve, secret: BinaryAscii.intFromHex(string))
+        return try PrivateKey(curve: curve, secret: BinaryAscii.intFromString(string))
     }
 }
 

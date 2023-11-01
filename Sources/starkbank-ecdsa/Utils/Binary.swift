@@ -22,6 +22,10 @@ class BinaryAscii {
         }
         return hexadecimal
     }
+
+    static func intFromString(_ string: String) -> BigInt {
+        return intFromHex(hexFromData(Data(string.utf8)))
+    }
     
     static func bitsFromHex(_ hexadecimal: String) -> String {
         let binary = String(BigInt(hexadecimal, radix: 16)!, radix: 2)
