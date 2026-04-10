@@ -1,55 +1,73 @@
-//
-//  File.swift
-//  
-//
-//  Created by Rafael Stark on 2/14/21.
-//
-
 import BigInt
 import Foundation
 
 
 public class CurveFp {
-    
+
     public var A: BigInt
     public var B: BigInt
     public var P: BigInt
     public var N: BigInt
     public var G: Point
     public var name: String
+    public var nistName: String?
     public var oid: [Int]
-    
-    init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int]) {
+
+    public init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int], nistName: String? = nil) {
         self.A = A
         self.B = B
         self.P = P
         self.N = N
         self.G = Point(Gx, Gy)
         self.name = name
+        self.nistName = nistName
         self.oid = oid
     }
-    
-    /**
-    Verify if the point `p` is on the curve
-    - Parameter p: Point p = Point(x, y)
-    - Returns: boolean
-    */
-    func contains(p: Point) -> Bool {
-        if (p.x < 0 || p.x >= self.P) {
+
+    /// Verify if the point `p` is on the curve
+    ///
+    /// - Parameter p: Point p = Point(x, y)
+    /// - Returns: boolean
+    public func contains(p: Point) -> Bool {
+        if p.x < 0 || p.x > self.P - 1 {
             return false
         }
-        if (p.y < 0 || p.y >= self.P) {
+        if p.y < 0 || p.y > self.P - 1 {
             return false
         }
-        if ((p.y.power(2) - (p.x.power(3) + self.A * p.x + self.B)) % self.P != 0) {
+        if (p.y.power(2) - (p.x.power(3) + self.A * p.x + self.B)).modulus(self.P) != 0 {
             return false
         }
         return true
     }
-    
-    func length() -> Int {
+
+    public func length() -> Int {
         return (1 + String(N, radix: 16).count) / 2
     }
+
+    public func y(x: BigInt, isEven: Bool) -> BigInt {
+        let ySquared = (x.power(3, modulus: P) + A * x + B).modulus(P)
+        var y = Math.modularSquareRoot(ySquared, P)
+        if isEven != (y % 2 == 0) {
+            y = P - y
+        }
+        return y
+    }
+}
+
+private var _curvesByOid = [Array<Int>: CurveFp]()
+
+public func curveAdd(_ curve: CurveFp) {
+    _curvesByOid[curve.oid] = curve
+}
+
+public func getByOid(_ oid: Array<Int>) throws -> CurveFp {
+    guard let curve = _curvesByOid[oid] else {
+        let names = _curvesByOid.values.map { $0.name }.joined(separator: ", ")
+        let oidStr = oid.map { String($0) }.joined(separator: ".")
+        throw Error.invalidOidError("Unknown curve with oid \(oidStr); The following are registered: \(names)")
+    }
+    return curve
 }
 
 public let secp256k1 = CurveFp(
@@ -71,25 +89,17 @@ public let prime256v1 = CurveFp(
     N: BigInt("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551", radix: 16)!,
     Gx: BigInt("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", radix: 16)!,
     Gy: BigInt("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5", radix: 16)!,
-    oid: [1, 2, 840, 10045, 3, 1, 7]
+    oid: [1, 2, 840, 10045, 3, 1, 7],
+    nistName: "P-256"
 )
 
-let supportedCurves = [
-    secp256k1,
-    prime256v1
-]
+public let p256 = prime256v1
 
-let curvesByOid = supportedCurves.reduce([Array<Int>: CurveFp]()) { (dict, curve) -> [Array<Int>: CurveFp] in
-    var dict = dict
-    dict[curve.oid] = curve
-    return dict
-}
+private let _initCurves: Void = {
+    curveAdd(secp256k1)
+    curveAdd(prime256v1)
+}()
 
-public func getCurveByOid(_ oid: Array<Int>) throws -> CurveFp {
-    if (curvesByOid[oid] == nil) {
-        throw Error.invalidOidError("Unknown curve with oid {receivedOid}; The following are registered: {registeredOids}"
-                                        .replacingOccurrences(of: "{receivedOid}", with: oid.description)
-                                        .replacingOccurrences(of: "{registeredOids}", with: supportedCurves.description))
-    }
-    return curvesByOid[oid]!
+public func ensureCurvesRegistered() {
+    _ = _initCurves
 }
