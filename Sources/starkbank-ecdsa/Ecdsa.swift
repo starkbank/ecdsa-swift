@@ -7,7 +7,7 @@ public class Ecdsa {
     public static func sign(message: String, privateKey: PrivateKey, hashfunc: Hash = Sha256()) -> Signature {
         let curve = privateKey.curve
         let byteMessage = hashfunc.digest(message)
-        let numberMessage = BinaryAscii.numberFromByteString(byteMessage, bitLength: curve.N.bitLength)
+        let numberMessage = BinaryAscii.numberFromByteString(byteMessage, bitLength: curve.nBitLength)
 
         var r = BigInt(0)
         var s = BigInt(0)
@@ -15,7 +15,7 @@ public class Ecdsa {
         let kIterator = RandomInteger.rfc6979(byteMessage, privateKey.secret, curve, hashfunc)
         while r == 0 || s == 0 {
             let randNum = kIterator.next()!
-            randSignPoint = Math.multiply(curve.G, randNum, curve.N, curve.A, curve.P)
+            randSignPoint = Math.multiplyGenerator(curve: curve, n: randNum)
             r = randSignPoint!.x.modulus(curve.N)
             s = ((numberMessage + r * privateKey.secret) * Math.inv(randNum, curve.N)).modulus(curve.N)
         }
@@ -35,7 +35,7 @@ public class Ecdsa {
     public static func verify(message: String, signature: Signature, publicKey: PublicKey, hashfunc: Hash = Sha256()) -> Bool {
         let curve = publicKey.curve
         let byteMessage = hashfunc.digest(message)
-        let numberMessage = BinaryAscii.numberFromByteString(byteMessage, bitLength: curve.N.bitLength)
+        let numberMessage = BinaryAscii.numberFromByteString(byteMessage, bitLength: curve.nBitLength)
         let r = signature.r
         let s = signature.s
 

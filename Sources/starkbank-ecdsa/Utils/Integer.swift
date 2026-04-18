@@ -72,7 +72,7 @@ public class Rfc6979Iterator: IteratorProtocol {
     init(hashBytes: Data, secret: BigInt, curve: CurveFp, hashfunc: Hash) {
         self.curveN = curve.N
         self.hashfunc = hashfunc
-        self.orderBitLen = curve.N.bitLength
+        self.orderBitLen = curve.nBitLength
         self.orderByteLen = (orderBitLen + 7) / 8
 
         let secretHex = StringHelper.zfill(BinaryAscii.hexFromInt(secret), orderByteLen * 2)

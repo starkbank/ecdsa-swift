@@ -2,6 +2,9 @@ import BigInt
 import Foundation
 
 
+private let _generatorWindowBits = 4
+
+
 class Math {
 
     /// Tonelli-Shanks algorithm for modular square root. Works for all odd primes.
@@ -71,6 +74,65 @@ class Math {
         )
     }
 
+    /// Fast scalar multiplication n*G where G is the curve generator, using a
+    /// precomputed window table (2^w-ary method). Roughly 2-3x faster than
+    /// variable-base multiplication because doublings stay cheap and additions
+    /// use pre-stored multiples of G.
+    ///
+    /// - Parameter curve: Elliptic curve with generator G
+    /// - Parameter n: Scalar multiplier
+    /// - Returns: Point n*G
+    static func multiplyGenerator(curve: CurveFp, n: BigInt) -> Point {
+        var n = n
+        if n < 0 || n >= curve.N {
+            n = n.modulus(curve.N)
+        }
+        if n == 0 {
+            return Point(BigInt(0), BigInt(0), BigInt(0))
+        }
+
+        let table = curve.generatorTable
+        let w = _generatorWindowBits
+        let mask = BigInt((1 << w) - 1)
+        let A = curve.A
+        let P = curve.P
+
+        // Jacobian infinity (y=0 triggers early-return in _jacobianAdd)
+        var r = Point(BigInt(0), BigInt(0), BigInt(1))
+        let startBit = ((curve.nBitLength - 1) / w) * w
+        var bit = startBit
+        while bit >= 0 {
+            for _ in 0..<w {
+                r = _jacobianDouble(r, A, P)
+            }
+            let window = (n >> bit) & mask
+            if window != 0 {
+                r = _jacobianAdd(r, table[Int(window)], A, P)
+            }
+            bit -= w
+        }
+        return _fromJacobian(r, P)
+    }
+
+    /// Build the precomputed window table of [O, G, 2G, ..., (2^w - 1)G] in
+    /// Jacobian coordinates. Called once per curve via the `generatorTable`
+    /// lazy property on `CurveFp`.
+    static func computeGeneratorTable(curve: CurveFp) -> [Point] {
+        let w = _generatorWindowBits
+        let size = 1 << w
+        let A = curve.A
+        let P = curve.P
+        let G = Point(curve.G.x, curve.G.y, BigInt(1))
+        var table = [Point]()
+        table.reserveCapacity(size)
+        table.append(Point(BigInt(0), BigInt(0), BigInt(1)))
+        table.append(G)
+        for _ in 0..<(size - 2) {
+            table.append(_jacobianAdd(table.last!, G, A, P))
+        }
+        return table
+    }
+
     /// Fast way to add two points in elliptic curves
     ///
     /// - Parameter p: First Point you want to add
@@ -109,19 +171,29 @@ class Math {
         )
     }
 
-    /// Modular inverse using Fermat's little theorem: x^(n-2) mod n.
-    /// Requires n to be prime (true for all ECDSA curve parameters).
-    /// Uses modPow which has more uniform execution time
-    /// than the extended Euclidean algorithm.
+    /// Modular inverse via extended Euclidean algorithm.
+    /// Roughly 2-3x faster than Fermat's little theorem for 256-bit operands.
     ///
-    /// - Parameter x: Divisor
-    /// - Parameter n: Mod for division (must be prime)
+    /// - Parameter x: Divisor (must be coprime to n)
+    /// - Parameter n: Mod for division
     /// - Returns: Value representing the division
     static func inv(_ x: BigInt, _ n: BigInt) -> BigInt {
-        if x == 0 {
-            return 0
+        precondition(x.modulus(n) != 0, "0 has no modular inverse")
+        // Invariant: t * x ≡ r (mod n),  newt * x ≡ newr (mod n)
+        var r = n
+        var newr = x.modulus(n)
+        var t = BigInt(0)
+        var newt = BigInt(1)
+        while newr != 0 {
+            let q = r / newr
+            let nextR = r - q * newr
+            r = newr
+            newr = nextR
+            let nextT = t - q * newt
+            t = newt
+            newt = nextT
         }
-        return x.power(n - 2, modulus: n)
+        return t.modulus(n)
     }
 
     /// Convert point to Jacobian coordinates
@@ -151,7 +223,14 @@ class Math {
         let ysq = (py * py).modulus(P)
         let S = (BigInt(4) * px * ysq).modulus(P)
         let pz2 = (pz * pz).modulus(P)
-        let M = (BigInt(3) * px * px + A * pz2 * pz2).modulus(P)
+        let M: BigInt
+        if A == 0 {
+            M = (BigInt(3) * px * px).modulus(P)
+        } else if A == -3 || A == P - 3 {
+            M = (BigInt(3) * (px - pz2) * (px + pz2)).modulus(P)
+        } else {
+            M = (BigInt(3) * px * px + A * pz2 * pz2).modulus(P)
+        }
         let nx = (M * M - BigInt(2) * S).modulus(P)
         let ny = (M * (S - nx) - BigInt(8) * ysq * ysq).modulus(P)
         let nz = (BigInt(2) * py * pz).modulus(P)

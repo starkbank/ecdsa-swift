@@ -12,6 +12,10 @@ public class CurveFp {
     public var name: String
     public var nistName: String?
     public var oid: [Int]
+    public var nBitLength: Int
+    /// Lazily-initialized precomputed multiples of G for windowed fixed-base
+    /// scalar multiplication (2^4-ary method). 16 Jacobian points: [O, G, 2G, ..., 15G].
+    internal lazy var generatorTable: [Point] = Math.computeGeneratorTable(curve: self)
 
     public init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int], nistName: String? = nil) {
         self.A = A
@@ -22,6 +26,7 @@ public class CurveFp {
         self.name = name
         self.nistName = nistName
         self.oid = oid
+        self.nBitLength = N.bitLength
     }
 
     /// Verify if the point `p` is on the curve
