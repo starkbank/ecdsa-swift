@@ -30,7 +30,10 @@ class RandomInteger {
         return min + randomValue
     }
 
-    /// Generate deterministic nonce values per RFC 6979
+    /// Generate nonce values per hedged RFC 6979: deterministic k derivation
+    /// with fresh random entropy mixed into K-init (RFC 6979 §3.6). Same message
+    /// and key yield different signatures, while preserving RFC 6979's protection
+    /// against RNG failures.
     public static func rfc6979(_ hashBytes: Data, _ secret: BigInt, _ curve: CurveFp, _ hashfunc: Hash) -> Rfc6979Iterator {
         return Rfc6979Iterator(hashBytes: hashBytes, secret: secret, curve: curve, hashfunc: hashfunc)
     }
@@ -54,7 +57,7 @@ class RandomInteger {
 }
 
 
-/// Iterator that yields deterministic k values per RFC 6979
+/// Iterator that yields k values per hedged RFC 6979 §3.6
 public class Rfc6979Iterator: IteratorProtocol {
     public typealias Element = BigInt
 
@@ -79,16 +82,20 @@ public class Rfc6979Iterator: IteratorProtocol {
         let hashHex = StringHelper.zfill(BinaryAscii.hexFromInt(hashReduced), orderByteLen * 2)
         let hashOctets = BinaryAscii.dataFromHex(hashHex)
 
+        var extraEntropyBytes = [UInt8](repeating: 0, count: orderByteLen)
+        let _ = SecRandomCopyBytes(kSecRandomDefault, orderByteLen, &extraEntropyBytes)
+        let extraEntropy = Data(extraEntropyBytes)
+
         let hLen = hashfunc.digestLength
         self.V = Data(repeating: 0x01, count: hLen)
         self.K = Data(repeating: 0x00, count: hLen)
 
-        // K = HMAC_K(V || 0x00 || secret || hashOctets)
-        self.K = Rfc6979Iterator.hmacSha(key: self.K, data: self.V + Data([0x00]) + secretBytes + hashOctets, hashfunc: hashfunc)
+        // K = HMAC_K(V || 0x00 || secret || hashOctets || extraEntropy)
+        self.K = Rfc6979Iterator.hmacSha(key: self.K, data: self.V + Data([0x00]) + secretBytes + hashOctets + extraEntropy, hashfunc: hashfunc)
         // V = HMAC_K(V)
         self.V = Rfc6979Iterator.hmacSha(key: self.K, data: self.V, hashfunc: hashfunc)
-        // K = HMAC_K(V || 0x01 || secret || hashOctets)
-        self.K = Rfc6979Iterator.hmacSha(key: self.K, data: self.V + Data([0x01]) + secretBytes + hashOctets, hashfunc: hashfunc)
+        // K = HMAC_K(V || 0x01 || secret || hashOctets || extraEntropy)
+        self.K = Rfc6979Iterator.hmacSha(key: self.K, data: self.V + Data([0x01]) + secretBytes + hashOctets + extraEntropy, hashfunc: hashfunc)
         // V = HMAC_K(V)
         self.V = Rfc6979Iterator.hmacSha(key: self.K, data: self.V, hashfunc: hashfunc)
 

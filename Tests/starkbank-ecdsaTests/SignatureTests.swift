@@ -28,4 +28,14 @@ class SignatureTests: XCTestCase {
         XCTAssertEqual(signature1.r, signature2.r)
         XCTAssertEqual(signature1.s, signature2.s)
     }
+
+    func testUniqueness() {
+        let privateKey = PrivateKey()
+        let message = "This is a text message"
+
+        let signature1 = Ecdsa.sign(message: message, privateKey: privateKey)
+        let signature2 = Ecdsa.sign(message: message, privateKey: privateKey)
+
+        XCTAssertNotEqual(signature1.toBase64(), signature2.toBase64())
+    }
 }

@@ -2,12 +2,11 @@ import XCTest
 import BigInt
 @testable import starkbank_ecdsa
 
-// MARK: - RFC 6979 Known Answer Tests
+// MARK: - Prime256v1 Public Key Derivation Tests
 
-class Rfc6979KnownAnswerTests: XCTestCase {
-    /// Test vectors from RFC 6979 Appendix A.2.5 (prime256v1/SHA-256).
-    /// The r values match the RFC exactly; s values are low-S normalized
-    /// (s = N - s when RFC s > N/2).
+class Prime256v1PublicKeyDerivationTests: XCTestCase {
+    /// RFC 6979 A.2.5 public key derivation. Signatures are hedged, so r/s
+    /// no longer match fixed test vectors, but pubkey derivation is unchanged.
 
     var privateKey: PrivateKey!
     var publicKey: PublicKey!
@@ -31,29 +30,23 @@ class Rfc6979KnownAnswerTests: XCTestCase {
         )
     }
 
-    func testSampleMessageSignature() {
+    func testSampleMessageRoundTrip() {
         let sig = Ecdsa.sign(message: "sample", privateKey: privateKey)
-        // r matches RFC 6979 A.2.5 exactly
-        XCTAssertEqual(sig.r, BigInt("EFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716", radix: 16)!)
-        // s is low-S normalized: N - 0xF7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8
-        XCTAssertEqual(sig.s, BigInt("834E36AD29A83BF2BC9385E491D6099C8FDF9D1ED67AA7EA5F51F93782857A9", radix: 16)!)
+        XCTAssertTrue(sig.s <= prime256v1.N / 2)
         XCTAssertTrue(Ecdsa.verify(message: "sample", signature: sig, publicKey: publicKey))
     }
 
-    func testTestMessageSignature() {
+    func testTestMessageRoundTrip() {
         let sig = Ecdsa.sign(message: "test", privateKey: privateKey)
-        // r matches RFC 6979 A.2.5 exactly
-        XCTAssertEqual(sig.r, BigInt("F1ABB023518351CD71D881567B1EA663ED3EFCF6C5132B354F28D3B0B7D38367", radix: 16)!)
-        // s already low-S, matches RFC directly
-        XCTAssertEqual(sig.s, BigInt("019F4113742A2B14BD25926B49C649155F267E60D3814B4C0CC84250E46F0083", radix: 16)!)
+        XCTAssertTrue(sig.s <= prime256v1.N / 2)
         XCTAssertTrue(Ecdsa.verify(message: "test", signature: sig, publicKey: publicKey))
     }
 }
 
-// MARK: - Secp256k1 Known Answer Tests
+// MARK: - Secp256k1 Public Key Derivation Tests
 
-class Secp256k1KnownAnswerTests: XCTestCase {
-    /// Known-answer tests for secp256k1 with secret=1 (pubkey = generator G).
+class Secp256k1PublicKeyDerivationTests: XCTestCase {
+    /// secp256k1 with secret=1 (pubkey = generator G).
 
     var privateKey: PrivateKey!
     var publicKey: PublicKey!
@@ -68,17 +61,13 @@ class Secp256k1KnownAnswerTests: XCTestCase {
         XCTAssertEqual(publicKey.point.y, secp256k1.G.y)
     }
 
-    func testSampleMessageSignature() {
+    func testSampleMessageRoundTrip() {
         let sig = Ecdsa.sign(message: "sample", privateKey: privateKey)
-        XCTAssertEqual(sig.r, BigInt("58DB657BCD631038BEA07B4941172F0167ACA98F12B55E3176BD1C35435D6501", radix: 16)!)
-        XCTAssertEqual(sig.s, BigInt("3A78E73D8FF8AB554E13C10F6390D81A882F91945D6275493882676170B53A57", radix: 16)!)
         XCTAssertTrue(Ecdsa.verify(message: "sample", signature: sig, publicKey: publicKey))
     }
 
-    func testTestMessageSignature() {
+    func testTestMessageRoundTrip() {
         let sig = Ecdsa.sign(message: "test", privateKey: privateKey)
-        XCTAssertEqual(sig.r, BigInt("98DF3AAED18D1299109E9732E3015F7E68E5D1FDEAD6924809B410D970A3B0CE", radix: 16)!)
-        XCTAssertEqual(sig.s, BigInt("3EF15987C6592379BAAD6392586A382D63952572632FCD951AE75E7471C144C6", radix: 16)!)
         XCTAssertTrue(Ecdsa.verify(message: "test", signature: sig, publicKey: publicKey))
     }
 }
@@ -199,19 +188,18 @@ class ForgeryAttemptTests: XCTestCase {
     }
 }
 
-// MARK: - RFC 6979 Tests
+// MARK: - Hedged Signature Tests
 
-class Rfc6979Tests: XCTestCase {
+class HedgedSignatureTests: XCTestCase {
 
-    func testDeterministicSignature() {
+    func testSameInputsProduceDifferentSignatures() {
         let privateKey = PrivateKey()
         let message = "test message"
 
         let signature1 = Ecdsa.sign(message: message, privateKey: privateKey)
         let signature2 = Ecdsa.sign(message: message, privateKey: privateKey)
 
-        XCTAssertEqual(signature1.r, signature2.r)
-        XCTAssertEqual(signature1.s, signature2.s)
+        XCTAssertTrue(signature1.r != signature2.r || signature1.s != signature2.s)
     }
 
     func testDifferentMessagesDifferentSignatures() {
@@ -429,15 +417,14 @@ class HashTruncationTests: XCTestCase {
         XCTAssertFalse(Ecdsa.verify(message: "wrong message", signature: signature, publicKey: publicKey, hashfunc: Sha512()))
     }
 
-    func testSha512DeterministicSignature() {
+    func testSha512SignaturesAreHedged() {
         let privateKey = PrivateKey()
         let message = "test message"
 
         let signature1 = Ecdsa.sign(message: message, privateKey: privateKey, hashfunc: Sha512())
         let signature2 = Ecdsa.sign(message: message, privateKey: privateKey, hashfunc: Sha512())
 
-        XCTAssertEqual(signature1.r, signature2.r)
-        XCTAssertEqual(signature1.s, signature2.s)
+        XCTAssertTrue(signature1.r != signature2.r || signature1.s != signature2.s)
     }
 
     func testHashMismatchFails() {
@@ -465,15 +452,14 @@ class Prime256v1SecurityTests: XCTestCase {
         XCTAssertTrue(Ecdsa.verify(message: message, signature: signature, publicKey: publicKey))
     }
 
-    func testDeterministicSignature() {
+    func testSignaturesAreHedged() {
         let privateKey = PrivateKey(curve: prime256v1)
         let message = "test message"
 
         let signature1 = Ecdsa.sign(message: message, privateKey: privateKey)
         let signature2 = Ecdsa.sign(message: message, privateKey: privateKey)
 
-        XCTAssertEqual(signature1.r, signature2.r)
-        XCTAssertEqual(signature1.s, signature2.s)
+        XCTAssertTrue(signature1.r != signature2.r || signature1.s != signature2.s)
     }
 
     func testWrongCurveKeyFails() {
