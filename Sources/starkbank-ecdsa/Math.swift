@@ -325,8 +325,10 @@ class Math {
         return r0
     }
 
-    /// Compute n1*p1 + n2*p2 using Shamir's trick (simultaneous double-and-add).
-    /// Not constant-time -- use only with public scalars (e.g. verification).
+    /// Compute n1*p1 + n2*p2 using Shamir's trick with Joint Sparse Form
+    /// (Solinas 2001). JSF picks signed digits in {-1, 0, 1} so at most ~l/2
+    /// digit pairs are non-zero, versus ~3l/4 for the raw binary form. Not
+    /// constant-time -- use only with public scalars (e.g. verification).
     static func _shamirMultiply(
         _ jp1: Point, _ n1: BigInt,
         _ jp2: Point, _ n2: BigInt,
@@ -341,22 +343,88 @@ class Math {
             n2 = n2.modulus(N)
         }
 
+        if n1 == 0 && n2 == 0 {
+            return Point(BigInt(0), BigInt(0), BigInt(1))
+        }
+
+        func neg(_ pt: Point) -> Point {
+            return Point(pt.x, pt.y == 0 ? BigInt(0) : P - pt.y, pt.z)
+        }
+
         let jp1p2 = _jacobianAdd(jp1, jp2, A, P)
+        let jp1mp2 = _jacobianAdd(jp1, neg(jp2), A, P)
 
-        let l = max(n1.bitLength, n2.bitLength)
+        // Indexed by (u0+1)*3 + (u1+1) where u0, u1 in {-1, 0, 1}.
+        // Only the 8 non-(0,0) combos are ever looked up.
+        var addTable = [Point?](repeating: nil, count: 9)
+        addTable[(1 + 1) * 3 + (0 + 1)] = jp1
+        addTable[(-1 + 1) * 3 + (0 + 1)] = neg(jp1)
+        addTable[(0 + 1) * 3 + (1 + 1)] = jp2
+        addTable[(0 + 1) * 3 + (-1 + 1)] = neg(jp2)
+        addTable[(1 + 1) * 3 + (1 + 1)] = jp1p2
+        addTable[(-1 + 1) * 3 + (-1 + 1)] = neg(jp1p2)
+        addTable[(1 + 1) * 3 + (-1 + 1)] = jp1mp2
+        addTable[(-1 + 1) * 3 + (1 + 1)] = neg(jp1mp2)
+
+        let digits = _jsfDigits(n1, n2)
         var r = Point(BigInt(0), BigInt(0), BigInt(1))
-
-        for i in stride(from: l - 1, through: 0, by: -1) {
+        for (u0, u1) in digits {
             r = _jacobianDouble(r, A, P)
-            let b1 = (n1 >> i) & 1
-            let b2 = (n2 >> i) & 1
-            if b1 == 1 {
-                r = _jacobianAdd(r, b2 == 1 ? jp1p2 : jp1, A, P)
-            } else if b2 == 1 {
-                r = _jacobianAdd(r, jp2, A, P)
+            if u0 != 0 || u1 != 0 {
+                r = _jacobianAdd(r, addTable[(u0 + 1) * 3 + (u1 + 1)]!, A, P)
             }
         }
 
         return r
+    }
+
+    /// Joint Sparse Form of (k0, k1): list of signed-digit pairs (u0, u1) in
+    /// {-1, 0, 1}, ordered MSB-first. At most one of any two consecutive pairs
+    /// is non-zero, giving density ~1/2 instead of ~3/4 from raw binary.
+    static func _jsfDigits(_ k0In: BigInt, _ k1In: BigInt) -> [(Int, Int)] {
+        var k0 = k0In
+        var k1 = k1In
+        var digits = [(Int, Int)]()
+        var d0 = 0
+        var d1 = 0
+        while (k0 + BigInt(d0)) != 0 || (k1 + BigInt(d1)) != 0 {
+            let a0 = k0 + BigInt(d0)
+            let a1 = k1 + BigInt(d1)
+            let u0: Int
+            if (a0 & 1) != 0 {
+                let a0_3 = Int(a0 & 3)
+                var u = a0_3 == 1 ? 1 : -1
+                let a0_7 = Int(a0 & 7)
+                if (a0_7 == 3 || a0_7 == 5) && Int(a1 & 3) == 2 {
+                    u = -u
+                }
+                u0 = u
+            } else {
+                u0 = 0
+            }
+            let u1: Int
+            if (a1 & 1) != 0 {
+                let a1_3 = Int(a1 & 3)
+                var u = a1_3 == 1 ? 1 : -1
+                let a1_7 = Int(a1 & 7)
+                if (a1_7 == 3 || a1_7 == 5) && Int(a0 & 3) == 2 {
+                    u = -u
+                }
+                u1 = u
+            } else {
+                u1 = 0
+            }
+            digits.append((u0, u1))
+            if 2 * d0 == 1 + u0 {
+                d0 = 1 - d0
+            }
+            if 2 * d1 == 1 + u1 {
+                d1 = 1 - d1
+            }
+            k0 >>= 1
+            k1 >>= 1
+        }
+        digits.reverse()
+        return digits
     }
 }
