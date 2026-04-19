@@ -248,12 +248,21 @@ class Math {
         let px = p.x, py = p.y, pz = p.z
         let qx = q.x, qy = q.y, qz = q.z
 
-        let qz2 = (qz * qz).modulus(P)
         let pz2 = (pz * pz).modulus(P)
-        let U1 = (px * qz2).modulus(P)
         let U2 = (qx * pz2).modulus(P)
-        let S1 = (py * qz2 * qz).modulus(P)
         let S2 = (qy * pz2 * pz).modulus(P)
+
+        let U1: BigInt
+        let S1: BigInt
+        if qz == 1 {
+            // Mixed affine+Jacobian add: qz²=qz³=1 saves four multiplications.
+            U1 = px
+            S1 = py
+        } else {
+            let qz2 = (qz * qz).modulus(P)
+            U1 = (px * qz2).modulus(P)
+            S1 = (py * qz2 * qz).modulus(P)
+        }
 
         if U1 == U2 {
             if S1 != S2 {
@@ -269,7 +278,7 @@ class Math {
         let U1H2 = (U1 * H2).modulus(P)
         let nx = (R * R - H3 - BigInt(2) * U1H2).modulus(P)
         let ny = (R * (U1H2 - nx) - S1 * H3).modulus(P)
-        let nz = (H * pz * qz).modulus(P)
+        let nz = qz == 1 ? (H * pz).modulus(P) : (H * pz * qz).modulus(P)
         return Point(nx, ny, nz)
     }
 
