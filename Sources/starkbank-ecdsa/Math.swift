@@ -155,22 +155,39 @@ class Math {
         )
     }
 
-    /// Compute n1*p1 + n2*p2 using Shamir's trick (simultaneous double-and-add).
-    /// Not constant-time -- use only with public scalars (e.g. verification).
+    /// Compute n1*p1 + n2*p2. If ``curve`` is given and exposes ``glvParams``
+    /// (e.g. secp256k1), uses the GLV endomorphism to split both scalars into
+    /// ~128-bit halves and run a 4-scalar simultaneous multi-exponentiation.
+    /// Otherwise falls back to Shamir's trick with JSF. Not constant-time --
+    /// use only with public scalars (e.g. verification).
     ///
     /// - Parameter p1: First point
     /// - Parameter n1: First scalar
     /// - Parameter p2: Second point
     /// - Parameter n2: Second scalar
-    /// - Parameter N: Order of the elliptic curve
-    /// - Parameter A: Coefficient of the first-order term of the equation Y^2 = X^3 + A*X + B (mod p)
-    /// - Parameter P: Prime number in the module of the equation Y^2 = X^3 + A*X + B (mod p)
+    /// - Parameter N: Order of the elliptic curve (ignored when ``curve`` is given)
+    /// - Parameter A: Coefficient of the first-order term (ignored when ``curve`` is given)
+    /// - Parameter P: Prime defining the field (ignored when ``curve`` is given)
+    /// - Parameter curve: Optional curve; enables GLV if ``curve.glvParams`` is set
     /// - Returns: Point n1*p1 + n2*p2
     static func multiplyAndAdd(
         _ p1: Point, _ n1: BigInt,
         _ p2: Point, _ n2: BigInt,
-        _ N: BigInt, _ A: BigInt, _ P: BigInt
+        _ N: BigInt, _ A: BigInt, _ P: BigInt,
+        curve: CurveFp? = nil
     ) -> Point {
+        if let curve = curve {
+            if curve.glvParams != nil {
+                return _glvMultiplyAndAdd(p1, n1, p2, n2, curve)
+            }
+            return _fromJacobian(
+                _shamirMultiply(
+                    _toJacobian(p1), n1,
+                    _toJacobian(p2), n2,
+                    curve.N, curve.A, curve.P
+                ), curve.P
+            )
+        }
         return _fromJacobian(
             _shamirMultiply(
                 _toJacobian(p1), n1,
@@ -178,6 +195,86 @@ class Math {
                 N, A, P
             ), P
         )
+    }
+
+    /// Compute n1*p1 + n2*p2 using the GLV endomorphism. Splits each 256-bit
+    /// scalar into two ~128-bit scalars via k = k1 + k2*lambda (mod N), then
+    /// runs a 4-scalar simultaneous double-and-add over (p1, phi(p1), p2,
+    /// phi(p2)) with a 16-entry precomputed table of subset sums. Halves the
+    /// loop length versus the plain Shamir path.
+    static func _glvMultiplyAndAdd(
+        _ p1: Point, _ n1: BigInt,
+        _ p2: Point, _ n2: BigInt,
+        _ curve: CurveFp
+    ) -> Point {
+        let glv = curve.glvParams!
+        let N = curve.N
+        let A = curve.A
+        let P = curve.P
+        let beta = glv.beta
+
+        let (k1, k2) = _glvDecompose(n1.modulus(N), glv, N)
+        let (k3, k4) = _glvDecompose(n2.modulus(N), glv, N)
+
+        // Base points (affine, z=1) -- phi((x,y)) = (beta*x mod P, y).
+        var bases: [Point] = [
+            Point(p1.x, p1.y, BigInt(1)),
+            Point((beta * p1.x).modulus(P), p1.y, BigInt(1)),
+            Point(p2.x, p2.y, BigInt(1)),
+            Point((beta * p2.x).modulus(P), p2.y, BigInt(1)),
+        ]
+        var scalars = [k1, k2, k3, k4]
+        for i in 0..<4 {
+            if scalars[i] < 0 {
+                scalars[i] = -scalars[i]
+                bases[i] = Point(bases[i].x, P - bases[i].y, BigInt(1))
+            }
+        }
+
+        // Precompute table[idx] = sum of bases[i] selected by bits of idx.
+        var table = [Point](repeating: Point(BigInt(0), BigInt(0), BigInt(1)), count: 16)
+        for idx in 1..<16 {
+            let low = idx & -idx
+            var i = 0
+            var l = low
+            while l > 1 {
+                l >>= 1
+                i += 1
+            }
+            table[idx] = _jacobianAdd(table[idx ^ low], bases[i], A, P)
+        }
+
+        let maxLen = scalars.map { $0.bitLength }.max() ?? 0
+        var r = Point(BigInt(0), BigInt(0), BigInt(1))
+        let s0 = scalars[0], s1 = scalars[1], s2 = scalars[2], s3 = scalars[3]
+        for bit in stride(from: maxLen - 1, through: 0, by: -1) {
+            r = _jacobianDouble(r, A, P)
+            let b0 = Int((s0 >> bit) & 1)
+            let b1 = Int((s1 >> bit) & 1)
+            let b2 = Int((s2 >> bit) & 1)
+            let b3 = Int((s3 >> bit) & 1)
+            let idx = b0 | (b1 << 1) | (b2 << 2) | (b3 << 3)
+            if idx != 0 {
+                r = _jacobianAdd(r, table[idx], A, P)
+            }
+        }
+
+        return _fromJacobian(r, P)
+    }
+
+    /// Decompose k into (k1, k2) with k = k1 + k2*lambda (mod N) and
+    /// |k1|, |k2| ~ sqrt(N). Babai rounding against the precomputed basis
+    /// {(a1, b1), (a2, b2)}; k1 and k2 may be negative.
+    static func _glvDecompose(_ k: BigInt, _ glv: GLVParams, _ N: BigInt) -> (BigInt, BigInt) {
+        let a1 = glv.a1, b1 = glv.b1, a2 = glv.a2, b2 = glv.b2
+        let halfN = N / 2
+        // attaswift/BigInt division is truncated-toward-zero. Both numerators
+        // below are non-negative (b1 < 0 so -b1*k >= 0), so /N equals floor.
+        let c1 = (b2 * k + halfN) / N
+        let c2 = (-b1 * k + halfN) / N
+        let k1 = k - c1 * a1 - c2 * a2
+        let k2 = -c1 * b1 - c2 * b2
+        return (k1, k2)
     }
 
     /// Modular inverse via extended Euclidean algorithm.

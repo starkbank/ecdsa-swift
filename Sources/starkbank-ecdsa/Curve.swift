@@ -2,6 +2,24 @@ import BigInt
 import Foundation
 
 
+public struct GLVParams {
+    public let beta: BigInt
+    public let lambda: BigInt
+    public let a1: BigInt
+    public let b1: BigInt
+    public let a2: BigInt
+    public let b2: BigInt
+
+    public init(beta: BigInt, lambda: BigInt, a1: BigInt, b1: BigInt, a2: BigInt, b2: BigInt) {
+        self.beta = beta
+        self.lambda = lambda
+        self.a1 = a1
+        self.b1 = b1
+        self.a2 = a2
+        self.b2 = b2
+    }
+}
+
 public class CurveFp {
 
     public var A: BigInt
@@ -13,11 +31,14 @@ public class CurveFp {
     public var nistName: String?
     public var oid: [Int]
     public var nBitLength: Int
-    /// Lazily-initialized precomputed multiples of G for windowed fixed-base
-    /// scalar multiplication (2^4-ary method). 16 Jacobian points: [O, G, 2G, ..., 15G].
+    /// GLV endomorphism parameters (only for curves that support one,
+    /// e.g. secp256k1). nil means no endomorphism; fall back to Shamir+JSF.
+    public let glvParams: GLVParams?
+    /// Lazily-initialized precomputed powers-of-two multiples of G in affine
+    /// form for the width-2 NAF fixed-base multiplication path.
     internal lazy var generatorTable: [Point] = Math.computeGeneratorTable(curve: self)
 
-    public init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int], nistName: String? = nil) {
+    public init(name: String, A: BigInt, B: BigInt, P: BigInt, N: BigInt, Gx: BigInt, Gy: BigInt, oid: [Int], nistName: String? = nil, glvParams: GLVParams? = nil) {
         self.A = A
         self.B = B
         self.P = P
@@ -27,6 +48,7 @@ public class CurveFp {
         self.nistName = nistName
         self.oid = oid
         self.nBitLength = N.bitLength
+        self.glvParams = glvParams
     }
 
     /// Verify if the point `p` is on the curve
@@ -83,7 +105,18 @@ public let secp256k1 = CurveFp(
     N: BigInt("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", radix: 16)!,
     Gx: BigInt("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", radix: 16)!,
     Gy: BigInt("483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", radix: 16)!,
-    oid: [1, 3, 132, 0, 10]
+    oid: [1, 3, 132, 0, 10],
+    // GLV endomorphism phi((x,y)) = (beta*x, y), equivalent to lambda*P.
+    // Basis vectors from Gauss reduction; used to split a 256-bit scalar k
+    // into two ~128-bit scalars (k1, k2) with k = k1 + k2*lambda (mod N).
+    glvParams: GLVParams(
+        beta: BigInt("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee", radix: 16)!,
+        lambda: BigInt("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72", radix: 16)!,
+        a1: BigInt("3086d221a7d46bcde86c90e49284eb15", radix: 16)!,
+        b1: -BigInt("e4437ed6010e88286f547fa90abfe4c3", radix: 16)!,
+        a2: BigInt("114ca50f7a8e2f3f657c1108d9d44cfd8", radix: 16)!,
+        b2: BigInt("3086d221a7d46bcde86c90e49284eb15", radix: 16)!
+    )
 )
 
 public let prime256v1 = CurveFp(
