@@ -2,9 +2,6 @@ import BigInt
 import Foundation
 
 
-private let _generatorWindowBits = 4
-
-
 class Math {
 
     /// Tonelli-Shanks algorithm for modular square root. Works for all odd primes.
@@ -74,10 +71,11 @@ class Math {
         )
     }
 
-    /// Fast scalar multiplication n*G where G is the curve generator, using a
-    /// precomputed window table (2^w-ary method). Roughly 2-3x faster than
-    /// variable-base multiplication because doublings stay cheap and additions
-    /// use pre-stored multiples of G.
+    /// Fast scalar multiplication n*G using a precomputed affine table of
+    /// powers-of-two multiples of G and the width-2 NAF of n. Every non-zero
+    /// NAF digit triggers one mixed add and zero doublings, trading the ~256
+    /// doublings of a windowed method for ~86 adds on average -- a large net
+    /// reduction in field multiplications for 256-bit scalars.
     ///
     /// - Parameter curve: Elliptic curve with generator G
     /// - Parameter n: Scalar multiplier
@@ -92,43 +90,54 @@ class Math {
         }
 
         let table = curve.generatorTable
-        let w = _generatorWindowBits
-        let mask = BigInt((1 << w) - 1)
         let A = curve.A
         let P = curve.P
 
-        // Jacobian infinity (y=0 triggers early-return in _jacobianAdd)
         var r = Point(BigInt(0), BigInt(0), BigInt(1))
-        let startBit = ((curve.nBitLength - 1) / w) * w
-        var bit = startBit
-        while bit >= 0 {
-            for _ in 0..<w {
-                r = _jacobianDouble(r, A, P)
+        var i = 0
+        var k = n
+        while k > 0 {
+            if (k & 1) != 0 {
+                let digit = BigInt(2) - (k & 3)  // -1 or +1
+                k -= digit
+                let g = table[i]
+                if digit == 1 {
+                    r = _jacobianAdd(r, g, A, P)
+                } else {
+                    r = _jacobianAdd(r, Point(g.x, P - g.y, BigInt(1)), A, P)
+                }
             }
-            let window = (n >> bit) & mask
-            if window != 0 {
-                r = _jacobianAdd(r, table[Int(window)], A, P)
-            }
-            bit -= w
+            k >>= 1
+            i += 1
         }
         return _fromJacobian(r, P)
     }
 
-    /// Build the precomputed window table of [O, G, 2G, ..., (2^w - 1)G] in
-    /// Jacobian coordinates. Called once per curve via the `generatorTable`
-    /// lazy property on `CurveFp`.
+    /// Build [G, 2G, 4G, ..., 2^nBitLength * G] in affine (z=1) form, so each
+    /// add in multiplyGenerator hits the mixed-add fast path.
     static func computeGeneratorTable(curve: CurveFp) -> [Point] {
-        let w = _generatorWindowBits
-        let size = 1 << w
         let A = curve.A
         let P = curve.P
-        let G = Point(curve.G.x, curve.G.y, BigInt(1))
+        var current = Point(curve.G.x, curve.G.y, BigInt(1))
         var table = [Point]()
-        table.reserveCapacity(size)
-        table.append(Point(BigInt(0), BigInt(0), BigInt(1)))
-        table.append(G)
-        for _ in 0..<(size - 2) {
-            table.append(_jacobianAdd(table.last!, G, A, P))
+        table.reserveCapacity(curve.nBitLength + 1)
+        table.append(current)
+        // NAF of an nBitLength-bit scalar can be up to nBitLength+1 digits.
+        for _ in 0..<curve.nBitLength {
+            let doubled = _jacobianDouble(current, A, P)
+            if doubled.y == 0 {
+                current = doubled
+            } else {
+                let zInv = inv(doubled.z, P)
+                let zInv2 = (zInv * zInv).modulus(P)
+                let zInv3 = (zInv2 * zInv).modulus(P)
+                current = Point(
+                    (doubled.x * zInv2).modulus(P),
+                    (doubled.y * zInv3).modulus(P),
+                    BigInt(1)
+                )
+            }
+            table.append(current)
         }
         return table
     }
