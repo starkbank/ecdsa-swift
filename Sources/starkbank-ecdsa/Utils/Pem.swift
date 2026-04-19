@@ -22,11 +22,11 @@ func getPemContent(pem: String, template: String) throws -> String {
 }
 
 func createPem(content: String, template: String) -> String {
-    var lines = Array<String>()
+    var lines = [String]()
     for start in stride(from: 0, to: content.count, by: 64) {
         let begin = content.index(content.startIndex, offsetBy: start)
-        let limit = Int(start.description)! + 64
-        let end = content.index(content.startIndex, offsetBy: limit <= content.count ? limit : content.count)
+        let limit = start + 64
+        let end = content.index(content.startIndex, offsetBy: min(limit, content.count))
         lines.append(String(content[begin..<end]))
     }
     return template.replacingOccurrences(of: "{content}", with: lines.joined(separator: "\n"))

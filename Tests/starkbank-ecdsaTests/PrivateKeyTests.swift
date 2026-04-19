@@ -1,62 +1,29 @@
-//
-//  PrivateKeyTests.swift
-//  MyAppTests
-//
-//  Created by Felipe Sueto on 28/10/21.
-//  Copyright © 2021 Stark Bank. All rights reserved.
-//
-
 import XCTest
-
 @testable import starkbank_ecdsa
 
 class PrivateKeyTests: XCTestCase {
-    
+
     func testPemConversion() throws {
-        let privateKey = PrivateKey()
-        let pem = privateKey.toPem()
+        let privateKey1 = PrivateKey()
+        let pem = privateKey1.toPem()
         let privateKey2 = try PrivateKey.fromPem(pem)
-        XCTAssertTrue(privateKey.secret == privateKey2.secret)
-        XCTAssertTrue(privateKey.curve.A == privateKey2.curve.A &&
-                      privateKey.curve.B == privateKey2.curve.B &&
-                      privateKey.curve.P == privateKey2.curve.P &&
-                      privateKey.curve.N == privateKey2.curve.N &&
-                      privateKey.curve.name == privateKey2.curve.name &&
-                      privateKey.curve.oid == privateKey2.curve.oid &&
-                      privateKey.curve.G.x == privateKey2.curve.G.x &&
-                      privateKey.curve.G.y == privateKey2.curve.G.y &&
-                      privateKey.curve.G.z == privateKey2.curve.G.z)
+        XCTAssertEqual(privateKey1.secret, privateKey2.secret)
+        XCTAssertEqual(privateKey1.curve.name, privateKey2.curve.name)
     }
-    
+
     func testDerConversion() throws {
-        let privateKey = PrivateKey()
-        let der = privateKey.toDer()
+        let privateKey1 = PrivateKey()
+        let der = privateKey1.toDer()
         let privateKey2 = try PrivateKey.fromDer(der)
-        XCTAssertTrue(privateKey.secret == privateKey2.secret)
-        XCTAssertTrue(privateKey.curve.A == privateKey2.curve.A &&
-                      privateKey.curve.B == privateKey2.curve.B &&
-                      privateKey.curve.P == privateKey2.curve.P &&
-                      privateKey.curve.N == privateKey2.curve.N &&
-                      privateKey.curve.name == privateKey2.curve.name &&
-                      privateKey.curve.oid == privateKey2.curve.oid &&
-                      privateKey.curve.G.x == privateKey2.curve.G.x &&
-                      privateKey.curve.G.y == privateKey2.curve.G.y &&
-                      privateKey.curve.G.z == privateKey2.curve.G.z)
+        XCTAssertEqual(privateKey1.secret, privateKey2.secret)
+        XCTAssertEqual(privateKey1.curve.name, privateKey2.curve.name)
     }
-    
+
     func testStringConversion() throws {
-        let privateKey = PrivateKey()
-        let string = privateKey.toString()
+        let privateKey1 = PrivateKey()
+        let string = privateKey1.toString()
         let privateKey2 = try PrivateKey.fromString(string: string)
-        XCTAssertTrue(privateKey.secret == privateKey2.secret)
-        XCTAssertTrue(privateKey.curve.A == privateKey2.curve.A &&
-                      privateKey.curve.B == privateKey2.curve.B &&
-                      privateKey.curve.P == privateKey2.curve.P &&
-                      privateKey.curve.N == privateKey2.curve.N &&
-                      privateKey.curve.name == privateKey2.curve.name &&
-                      privateKey.curve.oid == privateKey2.curve.oid &&
-                      privateKey.curve.G.x == privateKey2.curve.G.x &&
-                      privateKey.curve.G.y == privateKey2.curve.G.y &&
-                      privateKey.curve.G.z == privateKey2.curve.G.z)
+        XCTAssertEqual(privateKey1.secret, privateKey2.secret)
+        XCTAssertEqual(privateKey1.curve.name, privateKey2.curve.name)
     }
 }

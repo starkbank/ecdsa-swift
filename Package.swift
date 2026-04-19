@@ -10,6 +10,9 @@ let package = Package(
         .library(
             name: "starkbank-ecdsa",
             targets: ["starkbank-ecdsa"]),
+        .executable(
+            name: "benchmark",
+            targets: ["benchmark"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -26,6 +29,9 @@ let package = Package(
             dependencies: [
                 "BigInt"
             ]),
+        .target(
+            name: "benchmark",
+            dependencies: ["starkbank-ecdsa"]),
         .testTarget(
             name: "starkbank-ecdsaTests",
             dependencies: ["starkbank-ecdsa"]),

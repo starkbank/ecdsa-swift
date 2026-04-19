@@ -15,17 +15,17 @@ public class Oid {
         let firstByte = String(hexadecimal.prefix(2))
         var remainingBytes = String(hexadecimal.suffix(hexadecimal.count - 2))
         let firstByteInt = BinaryAscii.intFromHex(firstByte)
-        var oid = [Int(floor(Double(firstByteInt / 40))), Int(firstByteInt % 40)]
+        var oid = [Int(firstByteInt / 40), Int(firstByteInt % 40)]
         var oidInt = 0
         while (remainingBytes.count > 0) {
             let byte = String(remainingBytes.prefix(2))
             remainingBytes = String(remainingBytes.suffix(remainingBytes.count - 2))
             let byteInt = Int(BinaryAscii.intFromHex(byte))
             if (byteInt >= 128) {
-                oidInt = byteInt - 128
+                oidInt = (128 * oidInt) + (byteInt - 128)
                 continue
             }
-            oidInt = oidInt * 128 + byteInt
+            oidInt = (128 * oidInt) + byteInt
             oid.append(oidInt)
             oidInt = 0
         }
@@ -39,7 +39,7 @@ public class Oid {
             var endDelta = 0
             while true {
                 let byteInt = oidInt % 128 + endDelta
-                oidInt = Int(floor(Double(oidInt / 128)))
+                oidInt = oidInt / 128
                 endDelta = 128
                 byteArray.append(byteInt)
                 if (oidInt == 0) {

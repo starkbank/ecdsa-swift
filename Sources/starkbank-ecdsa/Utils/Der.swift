@@ -58,7 +58,7 @@ public class Der {
         var hexadecimal = BinaryAscii.hexFromInt(abs(number))
         if (number < 0) {
             let bitCount = 4 * hexadecimal.count
-            let twosComplement = BigInt(pow(Double(2), Double(bitCount))) + number
+            let twosComplement = (BigInt(1) << bitCount) + number
             return BinaryAscii.hexFromInt(twosComplement)
         }
         let bits = BinaryAscii.bitsFromHex(String(hexadecimal.prefix(1)))
@@ -172,7 +172,7 @@ public class Der {
             return BigInt(integer)
         }
         let bitCount = 4 * hexadecimal.count
-        return BigInt(integer - BigInt(NSDecimalNumber(decimal: pow(2, bitCount)).intValue))
+        return integer - (BigInt(1) << bitCount)
     }
     
     private static func readLengthBytes(hexadecimal: inout String) throws -> (Int, Int) {
@@ -198,13 +198,13 @@ public class Der {
     }
     
     private static func generateLengthBytes(hexadecimal: String) -> String {
-        let size = BigInt(floor(Double(hexadecimal.count) / 2))
-        let length = BinaryAscii.hexFromInt(size)
+        let size = hexadecimal.count / 2
+        let length = BinaryAscii.hexFromInt(BigInt(size))
         if size < 128 {
             return StringHelper.zfill(length, 2)
         }
-        let lengthLength = 128 + BigInt(floor(Double(length.count) / 2))
-        return BinaryAscii.hexFromInt(lengthLength) + length
+        let lengthLength = 128 + length.count / 2
+        return BinaryAscii.hexFromInt(BigInt(lengthLength)) + length
     }
     
     private static func getTagData(_ tag: String) -> Dictionary<String, AnyObject> {
