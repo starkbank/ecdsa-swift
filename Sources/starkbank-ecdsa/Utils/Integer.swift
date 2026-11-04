@@ -20,13 +20,17 @@ class RandomInteger {
         let result = getBytesNeeded(max - min)
         let bytesNeeded = result.0
         let mask = result.1
-        var bytes = [Int](repeating: 0, count: bytesNeeded)
+        var bytes = [UInt8](repeating: 0, count: bytesNeeded)
 
-        let _ = SecRandomCopyBytes(
+        let status = SecRandomCopyBytes(
             kSecRandomDefault,
             bytesNeeded,
             &bytes
         )
+        // Keys and nonces must never fall back to a predictable value, so a failing system RNG is fatal.
+        guard status == errSecSuccess else {
+            fatalError("SecRandomCopyBytes failed with status \(status)")
+        }
 
         var randomValue = BigInt(0)
         
