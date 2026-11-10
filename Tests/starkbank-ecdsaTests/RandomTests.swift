@@ -6,6 +6,7 @@
 //  Copyright © 2021 Stark Bank. All rights reserved.
 //
 
+import BigInt
 import XCTest
 
 @testable import starkbank_ecdsa
@@ -21,5 +22,18 @@ class RandomTests: XCTestCase {
             let signature = Ecdsa.sign(message: message, privateKey: privateKey)
             XCTAssertTrue(Ecdsa.verify(message: message, signature: signature, publicKey: publicKey))
         }
+    }
+
+    func testFullRange() throws {
+        let min = BigInt(0)
+        let max = (BigInt(1) << 256) - BigInt(1)
+        var highestBitWidth = 0
+        for _ in 0..<32 {
+            let value = RandomInteger.between(min: min, max: max)
+            XCTAssertTrue(value >= min && value <= max)
+            let bitLength = value.magnitude.bitWidth - value.magnitude.leadingZeroBitCount
+            highestBitWidth = Swift.max(highestBitWidth, bitLength)
+        }
+        XCTAssertGreaterThan(highestBitWidth, 248)
     }
 }

@@ -15,3 +15,6 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 ## [Unreleased]
 ### Added
 - first official version
+### Fixed
+- random integer generation filling only part of the buffer, which weakened private keys and signature nonces
+- unchecked SecRandomCopyBytes status, which could produce predictable private keys and signature nonces
